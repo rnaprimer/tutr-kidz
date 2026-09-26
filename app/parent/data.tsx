@@ -1,3 +1,4 @@
+import { useDocumentTitle } from "../../lib/utils/useDocumentTitle";
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
@@ -43,6 +44,8 @@ import {
 } from '../../features/sync/syncService';
 
 export default function ParentDataScreen() {
+  useDocumentTitle("Tutr Kidz — Parent Data & Privacy");
+
   const { isLocked, checking, handleUnlockSuccess, handleUnlockCancel } = useParentAccess();
   const { isAuthenticated, user } = useAuth();
 

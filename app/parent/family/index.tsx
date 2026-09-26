@@ -1,3 +1,4 @@
+import { useDocumentTitle } from "../../../lib/utils/useDocumentTitle";
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,6 +15,8 @@ import { useParentAccess } from '../../../features/settings/useParentAccess';
 import { ParentLockChallengeModal } from '../../../components/settings/ParentLockChallengeModal';
 
 export default function FamilyDashboardScreen() {
+  useDocumentTitle("Tutr Kidz — Family Dashboard");
+
   const { isLocked, checking, handleUnlockSuccess, handleUnlockCancel } = useParentAccess();
   const [data, setData] = useState<FamilyDashboardData | null>(null);
 
@@ -259,10 +262,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.02,
-    shadowRadius: 4,
+    boxShadow: "0 1px 4px rgba(0, 0, 0, 0.02)",
     elevation: 1,
   },
   statBlock: {
@@ -319,10 +319,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xxl,
     alignItems: 'center',
     width: '100%',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
+    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.03)",
     elevation: 1.5,
   },
   emptyTitle: {

@@ -1,3 +1,4 @@
+import { useDocumentTitle } from "../../../../lib/utils/useDocumentTitle";
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
@@ -26,6 +27,8 @@ import {
 } from '../../../../features/insights/insightTypes';
 
 export default function ChildLearningInsightsScreen() {
+  useDocumentTitle("Tutr Kidz — Learning Insights");
+
   const { childId } = useLocalSearchParams<{ childId: string }>();
   const { isLocked, checking, handleUnlockSuccess, handleUnlockCancel } = useParentAccess();
 

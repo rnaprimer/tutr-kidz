@@ -58,10 +58,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: spacing.xl,
     marginVertical: 4,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.02,
-    shadowRadius: 4,
+    boxShadow: "0 1px 4px rgba(0, 0, 0, 0.02)",
     elevation: 1,
   },
   topRow: {

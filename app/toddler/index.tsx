@@ -1,3 +1,4 @@
+import { useDocumentTitle } from "../../lib/utils/useDocumentTitle";
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -23,6 +24,8 @@ const ACTIVITIES: ActivityItem[] = [
 ];
 
 export default function ToddlerActivitySelectionScreen() {
+  useDocumentTitle("Tutr Kidz — Toddler");
+
   const [progress, setProgress] = useState<ProgressState>(DEFAULT_PROGRESS);
 
   useFocusEffect(

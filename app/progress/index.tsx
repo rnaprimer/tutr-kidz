@@ -160,10 +160,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xxl,
     alignItems: 'center',
     width: '100%',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
+    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.03)",
     elevation: 1.5,
   },
   emptyTitle: {

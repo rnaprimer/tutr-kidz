@@ -1,3 +1,4 @@
+import { useDocumentTitle } from "../../lib/utils/useDocumentTitle";
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
@@ -29,6 +30,8 @@ import {
 import { SyncStatusState } from '../../features/sync/syncTypes';
 
 export default function ParentAccountScreen() {
+  useDocumentTitle("Tutr Kidz — Parent Account");
+
   const { isLocked, checking, handleUnlockSuccess, handleUnlockCancel } = useParentAccess();
   const { user, isAuthenticated, isLoading: authLoading, signOut, resetPassword } = useAuth();
 

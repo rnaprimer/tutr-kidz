@@ -78,10 +78,7 @@ const styles = StyleSheet.create({
   },
   primary: {
     backgroundColor: colors.accent,
-    shadowColor: colors.accent,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
+    boxShadow: "0 3px 8px rgba(59, 130, 246, 0.12)",
     elevation: 2,
   },
   secondary: {
@@ -98,7 +95,7 @@ const styles = StyleSheet.create({
   },
   primaryDisabled: {
     backgroundColor: colors.border,
-    shadowOpacity: 0,
+    boxShadow: "none",
     elevation: 0,
     opacity: 0.7,
   },

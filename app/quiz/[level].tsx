@@ -1,3 +1,4 @@
+import { useDocumentTitle } from "../../lib/utils/useDocumentTitle";
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,6 +20,8 @@ import { CurriculumLevel } from '../../types/curriculum';
 import { QuizVisualRenderer } from '../../components/quiz/QuizVisualRenderer';
 
 export default function QuizScreen() {
+  useDocumentTitle("Tutr Kidz — Quiz");
+
   const {
     level: levelParam,
     activity: activityParam,

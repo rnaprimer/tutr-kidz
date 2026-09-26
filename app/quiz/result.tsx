@@ -1,3 +1,4 @@
+import { useDocumentTitle } from "../../lib/utils/useDocumentTitle";
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,6 +11,8 @@ import { CurriculumLevel } from '../../types/curriculum';
 import { getProgress, recordQuizResult } from '../../features/progress/progressStorage';
 
 export default function QuizResultScreen() {
+  useDocumentTitle("Tutr Kidz — Quiz Results");
+
   const params = useLocalSearchParams<{
     score?: string;
     total?: string;
@@ -221,10 +224,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: spacing.xxl,
     alignItems: 'center',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 10,
+    boxShadow: "0 2px 10px rgba(0, 0, 0, 0.04)",
     elevation: 2,
   },
   heading: {

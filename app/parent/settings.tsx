@@ -1,3 +1,4 @@
+import { useDocumentTitle } from "../../lib/utils/useDocumentTitle";
 import React, { useState } from 'react';
 import {
   View,
@@ -43,6 +44,8 @@ const SESSION_OPTIONS: Array<{ value: 5 | 10; label: string; description: string
 ];
 
 export default function ParentSettingsScreen() {
+  useDocumentTitle("Tutr Kidz — Parent Settings");
+
   const { isLocked, checking, handleUnlockSuccess, handleUnlockCancel } = useParentAccess();
   const [familyState, setFamilyState] = useState<FamilyState | null>(null);
   const [settings, setSettings] = useState<ParentSettings | null>(null);

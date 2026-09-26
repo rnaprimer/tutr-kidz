@@ -1,3 +1,4 @@
+import { useDocumentTitle } from "../lib/utils/useDocumentTitle";
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -27,6 +28,8 @@ import { fetchDailyRecommendation } from '../features/dailyLearning/dailyLearnin
 import { DailyLearningRecommendation } from '../features/dailyLearning/dailyLearningTypes';
 
 export default function HomeScreen() {
+  useDocumentTitle("Tutr Kidz");
+
   const [progress, setProgress] = React.useState<ProgressState>(DEFAULT_PROGRESS);
   const [activeChildRecord, setActiveChildRecord] = React.useState<ChildRecord | null>(null);
   const [hasMultipleChildren, setHasMultipleChildren] = React.useState<boolean>(false);

@@ -1,3 +1,4 @@
+import { useDocumentTitle } from "../../lib/utils/useDocumentTitle";
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -11,6 +12,8 @@ import { useParentAccess } from '../../features/settings/useParentAccess';
 import { ParentLockChallengeModal } from '../../components/settings/ParentLockChallengeModal';
 
 export default function LearnersScreen() {
+  useDocumentTitle("Tutr Kidz — Learners");
+
   const { isLocked, checking, handleUnlockSuccess, handleUnlockCancel } = useParentAccess();
   const [familyState, setFamilyState] = useState<FamilyState | null>(null);
 
@@ -211,10 +214,7 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     gap: spacing.md,
     minHeight: 88,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.02,
-    shadowRadius: 4,
+    boxShadow: "0 1px 4px rgba(0, 0, 0, 0.02)",
     elevation: 1,
   },
   cardSelected: {

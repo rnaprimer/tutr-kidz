@@ -1,3 +1,4 @@
+import { useDocumentTitle } from "../../lib/utils/useDocumentTitle";
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -26,6 +27,8 @@ import { fetchDailyRecommendation } from '../../features/dailyLearning/dailyLear
 import { DailyLearningRecommendation } from '../../features/dailyLearning/dailyLearningTypes';
 
 export default function ParentDashboardScreen() {
+  useDocumentTitle("Tutr Kidz — Parent Dashboard");
+
   const { isLocked, checking, handleUnlockSuccess, handleUnlockCancel } = useParentAccess();
   const [data, setData] = useState<ParentDashboardData | null>(null);
   const [activeChildRecord, setActiveChildRecord] = useState<ChildRecord | null>(null);
@@ -479,10 +482,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-around',
     marginBottom: spacing.xxl,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.02,
-    shadowRadius: 4,
+    boxShadow: "0 1px 4px rgba(0, 0, 0, 0.02)",
     elevation: 1,
   },
   metricBlock: {
@@ -517,10 +517,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#E8E5DF',
     padding: spacing.xl,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.02,
-    shadowRadius: 4,
+    boxShadow: "0 1px 4px rgba(0, 0, 0, 0.02)",
     elevation: 1,
   },
   focusEyebrow: {
@@ -580,10 +577,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xxl,
     alignItems: 'center',
     width: '100%',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
+    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.03)",
     elevation: 1.5,
   },
   emptyTitle: {
