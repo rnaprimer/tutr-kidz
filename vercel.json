@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npx expo export --platform web",
+  "buildCommand": "npx expo export --platform web && cp vercel.json dist/vercel.json",
   "outputDirectory": "dist",
   "cleanUrls": true,
   "trailingSlash": false,
