@@ -32,6 +32,27 @@ export default function LevelTopicsScreen() {
     }, [])
   );
 
+  if (!levelConfig || topics.length === 0) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={[styles.contentContainer, { paddingHorizontal: spacing.xl, justifyContent: 'center', flex: 1, alignItems: 'center' }]}>
+          <Text style={styles.brandTitle}>Tutr Kidz</Text>
+          <Text style={[styles.screenHeading, { fontSize: 24, marginVertical: spacing.md, textAlign: 'center' }]}>
+            That learning level isn't available.
+          </Text>
+          <Text style={[styles.subtitle, { marginBottom: spacing.xl, textAlign: 'center' }]}>
+            Please select one of the available classes or toddler activities.
+          </Text>
+          <PrimaryButton
+            label="Return Home"
+            onPress={() => router.replace('/')}
+            style={{ width: '100%', maxWidth: 280 }}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   const topicProgress = getLevelTopicProgress(progress, levelId);
   const displayTitle = levelConfig?.title ?? 'Class';
 

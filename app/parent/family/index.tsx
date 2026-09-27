@@ -1,6 +1,6 @@
 import { useDocumentTitle } from "../../../lib/utils/useDocumentTitle";
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { colors, layout, spacing } from '../../../constants/colors';
@@ -36,6 +36,7 @@ export default function FamilyDashboardScreen() {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.loadingContainer}>
+          <ActivityIndicator size="small" color={colors.accent} style={{ marginBottom: spacing.md }} />
           <Text style={styles.loadingText}>Loading family insights...</Text>
         </View>
       </SafeAreaView>

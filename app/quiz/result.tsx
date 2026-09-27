@@ -21,8 +21,12 @@ export default function QuizResultScreen() {
     topic?: string;
   }>();
 
-  const score = parseInt(params.score || '0', 10);
-  const total = parseInt(params.total || '0', 10);
+  const rawScore = parseInt(params.score || '0', 10);
+  const rawTotal = parseInt(params.total || '0', 10);
+  const safeScore = isNaN(rawScore) ? 0 : Math.max(0, rawScore);
+  const safeTotal = isNaN(rawTotal) ? 0 : Math.max(0, rawTotal);
+  const score = safeTotal > 0 ? Math.min(safeScore, safeTotal) : safeScore;
+  const total = safeTotal;
   const levelId = (params.level || '') as CurriculumLevel;
   const activityId = params.activity || '';
   const topicId = params.topic || '';
@@ -93,6 +97,25 @@ export default function QuizResultScreen() {
   const handleHome = () => {
     router.replace('/');
   };
+
+  if (total <= 0) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={[styles.contentContainer, { paddingHorizontal: spacing.xl, justifyContent: 'center', flex: 1, alignItems: 'center' }]}>
+          <Text style={[styles.brandTitle, { marginBottom: spacing.md }]}>Tutr Kidz</Text>
+          <Text style={[styles.heading, { textAlign: 'center', marginBottom: spacing.sm }]}>No Quiz Results</Text>
+          <Text style={[styles.summaryText, { textAlign: 'center', marginBottom: spacing.xl }]}>
+            Complete a quiz to see your learning results here.
+          </Text>
+          <PrimaryButton
+            label="Return Home"
+            onPress={handleHome}
+            style={{ width: '100%', maxWidth: 280 }}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const subtitleText = (() => {
     if (isToddler && activityId) {

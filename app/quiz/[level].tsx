@@ -1,5 +1,5 @@
 import { useDocumentTitle } from "../../lib/utils/useDocumentTitle";
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -65,9 +65,13 @@ export default function QuizScreen() {
     nextQuestion,
   } = useQuiz(questions);
 
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
   const handleNext = () => {
+    if (isTransitioning) return;
     const isFinished = nextQuestion();
     if (isFinished) {
+      setIsTransitioning(true);
       router.replace({
         pathname: '/quiz/result',
         params: {
@@ -169,7 +173,7 @@ export default function QuizScreen() {
             <PrimaryButton
               label={isLastQuestion ? 'See Results' : 'Next'}
               onPress={handleNext}
-              disabled={!isAnswered}
+              disabled={!isAnswered || isTransitioning}
               accessibilityHint={
                 isAnswered
                   ? 'Advances to the next question or result'

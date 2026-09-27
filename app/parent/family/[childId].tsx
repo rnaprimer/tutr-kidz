@@ -1,6 +1,6 @@
 import { useDocumentTitle } from "../../../lib/utils/useDocumentTitle";
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { colors, layout, spacing } from '../../../constants/colors';
@@ -61,11 +61,33 @@ export default function ChildDetailScreen() {
     }
   };
 
-  if (checking || !isLoaded || !data) {
+  if (checking || !isLoaded) {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.loadingContainer}>
+          <ActivityIndicator size="small" color={colors.accent} style={{ marginBottom: spacing.md }} />
           <Text style={styles.loadingText}>Loading learner details...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!data) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={[styles.container, { paddingHorizontal: spacing.xl, justifyContent: 'center', flex: 1, alignItems: 'center' }]}>
+          <Text style={styles.brandTitle}>Tutr Kidz</Text>
+          <Text style={[styles.heading, { fontSize: 24, marginVertical: spacing.md }]}>
+            We couldn't find this learner.
+          </Text>
+          <Text style={[styles.subtitle, { marginBottom: spacing.xl, textAlign: 'center' }]}>
+            This learner profile may have been removed or the link is invalid.
+          </Text>
+          <PrimaryButton
+            label="Return to Family"
+            onPress={() => router.replace('/parent/family')}
+            style={{ width: '100%', maxWidth: 280 }}
+          />
         </View>
       </SafeAreaView>
     );
