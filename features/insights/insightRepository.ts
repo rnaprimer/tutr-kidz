@@ -1,6 +1,7 @@
 import { getFamilyState } from '../family/familyRepository';
 import { getProgress } from '../progress/progressRepository';
 import { getOverallAccuracy } from '../progress/progressUtils';
+import { CurriculumLevel } from '../../types/curriculum';
 import {
   LearningInsight,
   LevelInsight,
@@ -16,6 +17,14 @@ import {
   getTopicInsights,
   getLearningSummary,
 } from './insightUtils';
+import {
+  LearningContinuity,
+  TopicHistoryItem,
+} from './continuityTypes';
+import {
+  getLearningContinuity,
+  getTopicHistory,
+} from './continuityUtils';
 
 export interface ParentDashboardData {
   hasData: boolean;
@@ -28,6 +37,8 @@ export interface ParentDashboardData {
   recentActivity: TopicInsight[];
   learningInsights: LearningInsight[];
   learningSummary?: LearningSummary | null;
+  continuity?: LearningContinuity;
+  topicHistory?: TopicHistoryItem[];
 }
 
 /**
@@ -70,6 +81,39 @@ export async function fetchChildTopicInsights(
 }
 
 /**
+ * Fetch learning continuity metrics for a specific child (Phase 18).
+ */
+export async function fetchChildLearningContinuity(
+  childId?: string | null
+): Promise<LearningContinuity> {
+  const familyState = await getFamilyState();
+  const targetId = childId || familyState.activeChildId;
+  const childLevel: CurriculumLevel = targetId && familyState.children[targetId]
+    ? familyState.children[targetId].profile.level
+    : 'class-1';
+
+  const progress = await getProgress(targetId);
+  return getLearningContinuity(progress, childLevel);
+}
+
+/**
+ * Fetch topic history for a specific child (Phase 18).
+ */
+export async function fetchChildTopicHistory(
+  childId?: string | null,
+  levelOverride?: CurriculumLevel
+): Promise<TopicHistoryItem[]> {
+  const familyState = await getFamilyState();
+  const targetId = childId || familyState.activeChildId;
+  const childLevel: CurriculumLevel = levelOverride || (targetId && familyState.children[targetId]
+    ? familyState.children[targetId].profile.level
+    : 'class-1');
+
+  const progress = await getProgress(targetId);
+  return getTopicHistory(progress, childLevel);
+}
+
+/**
  * Load dashboard data for a child.
  * Single source of truth is the existing progress repository.
  */
@@ -90,9 +134,16 @@ export async function fetchParentDashboardData(
   const learningInsights = getLearningInsights(progress);
 
   let learningSummary: LearningSummary | null = null;
+  const childLevel: CurriculumLevel = targetId && familyState.children[targetId]
+    ? familyState.children[targetId].profile.level
+    : 'class-1';
+
   if (targetId && familyState.children[targetId]) {
     learningSummary = getLearningSummary(familyState.children[targetId], progress);
   }
+
+  const continuity = getLearningContinuity(progress, childLevel);
+  const topicHistory = getTopicHistory(progress, childLevel);
 
   return {
     hasData,
@@ -105,5 +156,7 @@ export async function fetchParentDashboardData(
     recentActivity,
     learningInsights,
     learningSummary,
+    continuity,
+    topicHistory,
   };
 }

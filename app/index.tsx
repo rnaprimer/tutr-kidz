@@ -1,5 +1,6 @@
 import { useDocumentTitle } from "../lib/utils/useDocumentTitle";
-import React from 'react';
+import React, { useEffect } from 'react';
+import { trackEvent } from '../lib/analytics';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
@@ -28,6 +29,9 @@ import { fetchDailyRecommendation } from '../features/dailyLearning/dailyLearnin
 import { DailyLearningRecommendation } from '../features/dailyLearning/dailyLearningTypes';
 
 export default function HomeScreen() {
+  useEffect(() => {
+    trackEvent('app_opened');
+  }, []);
   useDocumentTitle("Tutr Kidz");
 
   const [progress, setProgress] = React.useState<ProgressState>(DEFAULT_PROGRESS);

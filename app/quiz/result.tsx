@@ -9,6 +9,7 @@ import { getLevelById } from '../../constants/levels';
 import { getTopicConfig } from '../../data/curriculum';
 import { CurriculumLevel } from '../../types/curriculum';
 import { getProgress, recordQuizResult } from '../../features/progress/progressStorage';
+import { trackEvent } from '../../lib/analytics';
 
 export default function QuizResultScreen() {
   useDocumentTitle("Tutr Kidz — Quiz Results");
@@ -54,6 +55,7 @@ export default function QuizResultScreen() {
         if (prev && prev.attempts >= 1) {
           setPreviousBest({ score: prev.bestScore, total: prev.bestTotal });
         }
+        trackEvent('quiz_completed', { level: String(levelId || ''), score, total });
         await recordQuizResult({
           level: levelId,
           topic: topicOrActivity,

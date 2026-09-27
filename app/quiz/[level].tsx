@@ -1,5 +1,6 @@
 import { useDocumentTitle } from "../../lib/utils/useDocumentTitle";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { trackEvent } from '../../lib/analytics';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -33,6 +34,10 @@ export default function QuizScreen() {
   }>();
 
   const levelId = typeof levelParam === 'string' ? levelParam : '';
+
+  useEffect(() => {
+    trackEvent('quiz_started', { level: String(levelId || '') });
+  }, [levelId]);
   const activityId = typeof activityParam === 'string' ? activityParam : '';
   const topicId = typeof topicParam === 'string' ? topicParam : '';
 

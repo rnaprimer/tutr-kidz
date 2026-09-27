@@ -19,7 +19,14 @@ import { getLevelById } from '../../../../constants/levels';
 import {
   fetchChildLearningSummary,
   fetchChildTopicInsights,
+  fetchChildLearningContinuity,
+  fetchChildTopicHistory,
 } from '../../../../features/insights/insightRepository';
+import {
+  LearningContinuity,
+  TopicHistoryItem,
+} from '../../../../features/insights/continuityTypes';
+import { trackEvent } from '../../../../lib/analytics';
 import {
   LearningSummary,
   TopicInsight,
@@ -35,6 +42,8 @@ export default function ChildLearningInsightsScreen() {
   const [childRecord, setChildRecord] = useState<ChildRecord | null>(null);
   const [summary, setSummary] = useState<LearningSummary | null>(null);
   const [topicInsights, setTopicInsights] = useState<TopicInsight[]>([]);
+  const [continuity, setContinuity] = useState<LearningContinuity | null>(null);
+  const [topicHistory, setTopicHistory] = useState<TopicHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
@@ -44,12 +53,17 @@ export default function ChildLearningInsightsScreen() {
       const current = familyState.children[childId];
       if (current) {
         setChildRecord(current);
-        const [sum, topics] = await Promise.all([
+        const [sum, topics, cont, hist] = await Promise.all([
           fetchChildLearningSummary(childId),
           fetchChildTopicInsights(childId),
+          fetchChildLearningContinuity(childId),
+          fetchChildTopicHistory(childId, current.profile.level),
         ]);
         setSummary(sum);
         setTopicInsights(topics);
+        setContinuity(cont);
+        setTopicHistory(hist);
+        trackEvent('learning_insights_opened');
       }
     } catch {
       // offline fallback handled gracefully
@@ -202,6 +216,117 @@ export default function ChildLearningInsightsScreen() {
               </Text>
             </View>
           ) : null}
+
+          {/* Learning Recently (Phase 18) */}
+          {continuity ? (
+            <View style={styles.continuityCard}>
+              <Text style={styles.continuityEyebrow}>Learning recently</Text>
+              <View style={styles.continuityRow}>
+                <View style={styles.continuityStat}>
+                  <Text style={styles.continuityStatLabel}>Last practice</Text>
+                  <Text style={styles.continuityStatValue}>
+                    {continuity.daysSinceLastPractice === null
+                      ? 'Not yet started'
+                      : continuity.daysSinceLastPractice === 0
+                      ? 'Today'
+                      : continuity.daysSinceLastPractice === 1
+                      ? 'Yesterday'
+                      : `${continuity.daysSinceLastPractice} days ago`}
+                  </Text>
+                </View>
+                <View style={styles.metricDivider} />
+                <View style={styles.continuityStat}>
+                  <Text style={styles.continuityStatLabel}>Past 7 days</Text>
+                  <Text style={styles.continuityStatValue}>
+                    {continuity.recentWindow.last7DaysQuestions} questions
+                  </Text>
+                </View>
+                <View style={styles.metricDivider} />
+                <View style={styles.continuityStat}>
+                  <Text style={styles.continuityStatLabel}>Sessions</Text>
+                  <Text style={styles.continuityStatValue}>
+                    {continuity.recentWindow.last7DaysSessions} sessions
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.continuityMessageBlock}>
+                <Text style={styles.continuityTrendText}>
+                  {continuity.trendDescription}
+                </Text>
+                <Text style={styles.continuityGuidanceText}>
+                  {continuity.guidance.message}
+                </Text>
+              </View>
+            </View>
+          ) : null}
+
+          {/* Learning Pattern (Phase 18) */}
+          {continuity ? (
+            <View style={styles.section}>
+              <Text style={styles.sectionHeading}>Learning Pattern</Text>
+              <View style={styles.patternCard}>
+                <View style={styles.patternHeaderRow}>
+                  <Text style={styles.patternStatusPill}>{continuity.stateLabel}</Text>
+                  <Text style={styles.patternFrequencyText}>
+                    {continuity.recentWindow.last7DaysActiveDays} active {continuity.recentWindow.last7DaysActiveDays === 1 ? 'day' : 'days'} this week
+                  </Text>
+                </View>
+                <Text style={styles.patternDescription}>
+                  {continuity.trendDescription}
+                </Text>
+              </View>
+            </View>
+          ) : null}
+
+          {/* Topics to Revisit (Phase 18) */}
+          {(() => {
+            const revisitTopics = topicHistory.filter(
+              (t) => t.recentState === 'revisit-suggested' || (t.attempts >= 1 && t.mastery === 'developing')
+            );
+            if (revisitTopics.length === 0) return null;
+            return (
+              <View style={styles.section}>
+                <Text style={styles.sectionHeading}>Topics to Revisit</Text>
+                <View style={styles.revisitList}>
+                  {revisitTopics.map((t) => (
+                    <View key={t.topicId} style={styles.revisitCard}>
+                      <View style={styles.revisitHeaderRow}>
+                        <Text style={styles.revisitTitle}>{t.title}</Text>
+                        <Text style={styles.revisitBadge}>Gentle revisit</Text>
+                      </View>
+                      <Text style={styles.revisitMessage}>
+                        {t.isToddler
+                          ? 'Ready to explore again when your toddler is curious.'
+                          : 'A gentle revisit may help keep this concept familiar.'}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            );
+          })()}
+
+          {/* Recently Explored (Phase 18) */}
+          {(() => {
+            const exploredTopics = topicHistory.filter(
+              (t) => t.recentState === 'recently-explored' || t.recentState === 'familiar'
+            );
+            if (exploredTopics.length === 0) return null;
+            return (
+              <View style={styles.section}>
+                <Text style={styles.sectionHeading}>Recently Explored</Text>
+                <View style={styles.exploredList}>
+                  {exploredTopics.map((t) => (
+                    <View key={t.topicId} style={styles.exploredCard}>
+                      <Text style={styles.exploredTitle}>{t.title}</Text>
+                      <Text style={styles.exploredSummary}>{t.displaySummary}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            );
+          })()}
 
           {/* Detailed Topic List */}
           <View style={styles.section}>
@@ -459,5 +584,144 @@ const styles = StyleSheet.create({
   footer: {
     marginTop: spacing.md,
     alignItems: 'center',
+  },
+  continuityCard: {
+    backgroundColor: colors.card,
+    borderRadius: layout.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.xl,
+    marginBottom: spacing.xl,
+    boxShadow: "0 2px 6px rgba(0, 0, 0, 0.03)",
+    elevation: 1,
+  },
+  continuityEyebrow: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: spacing.md,
+  },
+  continuityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  continuityStat: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  continuityStatLabel: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginBottom: 2,
+  },
+  continuityStatValue: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  continuityMessageBlock: {
+    marginTop: spacing.md,
+    gap: 4,
+  },
+  continuityTrendText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  continuityGuidanceText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 20,
+  },
+  patternCard: {
+    backgroundColor: colors.card,
+    borderRadius: layout.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.lg,
+    boxShadow: "0 1px 4px rgba(0, 0, 0, 0.02)",
+    elevation: 1,
+  },
+  patternHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+  },
+  patternStatusPill: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.accent,
+  },
+  patternFrequencyText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    fontWeight: '500',
+  },
+  patternDescription: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 20,
+  },
+  revisitList: {
+    gap: spacing.sm,
+  },
+  revisitCard: {
+    backgroundColor: colors.card,
+    borderRadius: layout.borderRadius.md,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    padding: spacing.md,
+  },
+  revisitHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  revisitTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  revisitBadge: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#B45309',
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  revisitMessage: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 18,
+  },
+  exploredList: {
+    gap: spacing.sm,
+  },
+  exploredCard: {
+    backgroundColor: colors.card,
+    borderRadius: layout.borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+  },
+  exploredTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 2,
+  },
+  exploredSummary: {
+    fontSize: 13,
+    color: colors.textSecondary,
   },
 });

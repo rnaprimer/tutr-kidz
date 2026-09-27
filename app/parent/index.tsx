@@ -1,5 +1,6 @@
 import { useDocumentTitle } from "../../lib/utils/useDocumentTitle";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { trackEvent } from '../../lib/analytics';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
@@ -27,6 +28,9 @@ import { fetchDailyRecommendation } from '../../features/dailyLearning/dailyLear
 import { DailyLearningRecommendation } from '../../features/dailyLearning/dailyLearningTypes';
 
 export default function ParentDashboardScreen() {
+  useEffect(() => {
+    trackEvent('parent_dashboard_opened');
+  }, []);
   useDocumentTitle("Tutr Kidz — Parent Dashboard");
 
   const { isLocked, checking, handleUnlockSuccess, handleUnlockCancel } = useParentAccess();
@@ -112,12 +116,20 @@ export default function ParentDashboardScreen() {
     practiceTopics,
     recentActivity,
     learningSummary,
+    continuity,
   } = data;
 
   const childName = getChildDisplayName(activeChildRecord);
   const childLevel = activeChildRecord?.profile?.level;
   const levelConfig = childLevel ? getLevelById(childLevel) : null;
   const levelTitle = levelConfig?.title ?? (childLevel || 'None');
+
+  const formatDaysAgo = (days: number | null) => {
+    if (days === null) return 'Not yet active';
+    if (days === 0) return 'Today';
+    if (days === 1) return 'Yesterday';
+    return `${days} days ago`;
+  };
 
   const handleManualLock = () => {
     lockParent();
@@ -218,6 +230,45 @@ export default function ParentDashboardScreen() {
                   <Text style={styles.focusEyebrow}>Today's Learning Focus</Text>
                   <Text style={styles.focusTitle}>{dailyFocus.title}</Text>
                   <Text style={styles.focusDescription}>{dailyFocus.description}</Text>
+                </View>
+              ) : null}
+
+              {/* Learning Recently (Phase 18) */}
+              {continuity ? (
+                <View style={styles.continuityCard}>
+                  <Text style={styles.continuityEyebrow}>Learning recently</Text>
+                  
+                  <View style={styles.continuityRow}>
+                    <View style={styles.continuityStat}>
+                      <Text style={styles.continuityStatLabel}>Last active</Text>
+                      <Text style={styles.continuityStatValue}>
+                        {formatDaysAgo(continuity.daysSinceLastPractice)}
+                      </Text>
+                    </View>
+                    <View style={styles.metricDivider} />
+                    <View style={styles.continuityStat}>
+                      <Text style={styles.continuityStatLabel}>Past 7 days</Text>
+                      <Text style={styles.continuityStatValue}>
+                        {continuity.recentWindow.last7DaysQuestions} questions
+                      </Text>
+                    </View>
+                    <View style={styles.metricDivider} />
+                    <View style={styles.continuityStat}>
+                      <Text style={styles.continuityStatLabel}>Topics</Text>
+                      <Text style={styles.continuityStatValue}>
+                        {continuity.recentWindow.last7DaysTopicsExplored} explored
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.continuityMessageBlock}>
+                    <Text style={styles.continuityTrendText}>
+                      {continuity.trendDescription}
+                    </Text>
+                    <Text style={styles.continuityGuidanceText}>
+                      {continuity.guidance.message}
+                    </Text>
+                  </View>
                 </View>
               ) : null}
 
@@ -676,5 +727,59 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: colors.accent,
+  },
+  continuityCard: {
+    backgroundColor: colors.card,
+    borderRadius: layout.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.xl,
+    marginBottom: spacing.xl,
+    boxShadow: "0 2px 6px rgba(0, 0, 0, 0.03)",
+    elevation: 1,
+  },
+  continuityEyebrow: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: spacing.md,
+  },
+  continuityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  continuityStat: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  continuityStatLabel: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginBottom: 2,
+  },
+  continuityStatValue: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  continuityMessageBlock: {
+    marginTop: spacing.md,
+    gap: 4,
+  },
+  continuityTrendText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  continuityGuidanceText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 20,
   },
 });
