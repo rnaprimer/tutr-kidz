@@ -1,7 +1,16 @@
 import { useDocumentTitle } from "../../lib/utils/useDocumentTitle";
 import React, { useState, useEffect } from 'react';
 import { trackEvent } from '../../lib/analytics';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Pressable,
+  ActivityIndicator,
+  Modal,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { colors, layout, spacing } from '../../constants/colors';
@@ -26,10 +35,20 @@ import { isParentUnlocked, lockParent } from '../../features/settings/parentSess
 import { isParentLockEnabled } from '../../features/settings/parentLock';
 import { fetchDailyRecommendation } from '../../features/dailyLearning/dailyLearningRepository';
 import { DailyLearningRecommendation } from '../../features/dailyLearning/dailyLearningTypes';
+import {
+  getLearningPlan,
+  updateLearningIntention,
+} from '../../features/plans/planRepository';
+import {
+  LearningPlan,
+  LEARNING_INTENTIONS,
+  LearningIntention,
+} from '../../features/plans/planTypes';
 
 export default function ParentDashboardScreen() {
   useEffect(() => {
     trackEvent('parent_dashboard_opened');
+    trackEvent('family_dashboard_opened');
   }, []);
   useDocumentTitle("Tutr Kidz — Parent Dashboard");
 
@@ -40,6 +59,8 @@ export default function ParentDashboardScreen() {
   const [todayQuestions, setTodayQuestions] = useState<number>(0);
   const [lockEnabled, setLockEnabled] = useState<boolean>(false);
   const [dailyFocus, setDailyFocus] = useState<DailyLearningRecommendation | null>(null);
+  const [learningPlan, setLearningPlan] = useState<LearningPlan | null>(null);
+  const [intentionModalVisible, setIntentionModalVisible] = useState<boolean>(false);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -56,11 +77,12 @@ export default function ParentDashboardScreen() {
         const active = activeId ? family.children[activeId] ?? null : null;
         setActiveChildRecord(active);
 
-        const [dashboardData, progress, isLockActive, rec] = await Promise.all([
+        const [dashboardData, progress, isLockActive, rec, currentPlan] = await Promise.all([
           fetchParentDashboardData(activeId),
           getProgress(activeId),
           isParentLockEnabled(),
           fetchDailyRecommendation(activeId),
+          activeId ? getLearningPlan(activeId) : Promise.resolve(null),
         ]);
 
         if (isMounted) {
@@ -68,6 +90,7 @@ export default function ParentDashboardScreen() {
           setTodayQuestions(getTodayQuestionsAnswered(progress));
           setLockEnabled(isLockActive);
           setDailyFocus(rec);
+          setLearningPlan(currentPlan);
         }
       };
 
@@ -97,6 +120,16 @@ export default function ParentDashboardScreen() {
     }
   };
 
+  const handleSaveIntention = async (intention: LearningIntention) => {
+    if (!activeChildRecord?.profile?.id) return;
+    const updated = await updateLearningIntention(activeChildRecord.profile.id, intention);
+    setLearningPlan(updated);
+    setIntentionModalVisible(false);
+    // Refresh dashboard data with new intention-aware guidance
+    const freshDashboard = await fetchParentDashboardData(activeChildRecord.profile.id);
+    setData(freshDashboard);
+  };
+
   if (checking || !data) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -117,12 +150,14 @@ export default function ParentDashboardScreen() {
     recentActivity,
     learningSummary,
     continuity,
+    topicHistory,
   } = data;
 
   const childName = getChildDisplayName(activeChildRecord);
   const childLevel = activeChildRecord?.profile?.level;
   const levelConfig = childLevel ? getLevelById(childLevel) : null;
   const levelTitle = levelConfig?.title ?? (childLevel || 'None');
+  const isToddler = childLevel === 'toddler';
 
   const formatDaysAgo = (days: number | null) => {
     if (days === null) return 'Not yet active';
@@ -136,6 +171,13 @@ export default function ParentDashboardScreen() {
     router.replace('/');
   };
 
+  // Topics worth revisiting
+  const revisitTopics = topicHistory
+    ? topicHistory.filter(
+        (t) => t.recentState === 'revisit-suggested' || (t.attempts >= 1 && t.mastery === 'developing')
+      )
+    : [];
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom', 'left', 'right']}>
       <ParentLockChallengeModal
@@ -143,6 +185,57 @@ export default function ParentDashboardScreen() {
         onSuccess={handleUnlockSuccess}
         onCancel={handleUnlockCancel}
       />
+
+      {/* Learning Intention Selection Modal (Phase 19) */}
+      <Modal
+        visible={intentionModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIntentionModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard} accessible={true}  accessibilityLabel="Choose a gentle learning intention">
+            <Text style={styles.modalTitle}>Gentle Learning Intention</Text>
+            <Text style={styles.modalSubtitle}>
+              Select a calm intention for {childName || 'your learner'}. There are no deadlines or score targets.
+            </Text>
+
+            <View style={styles.intentionList}>
+              {LEARNING_INTENTIONS.map((intention) => {
+                const isSelected = learningPlan?.intention === intention;
+                return (
+                  <Pressable
+                    key={intention}
+                    onPress={() => handleSaveIntention(intention)}
+                    accessible={true}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isSelected }}
+                    accessibilityLabel={intention + (isSelected ? ', currently selected' : '')}
+                    style={({ pressed }) => [
+                      styles.intentionOption,
+                      isSelected && styles.intentionOptionSelected,
+                      pressed && styles.intentionOptionPressed,
+                    ]}
+                  >
+                    <Text style={[styles.intentionOptionText, isSelected && styles.intentionOptionTextSelected]}>
+                      {intention}
+                    </Text>
+                    {isSelected ? <Text style={styles.intentionCheck}>✓</Text> : null}
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            <PrimaryButton
+              label="Close"
+              variant="tertiary"
+              onPress={() => setIntentionModalVisible(false)}
+              accessibilityLabel="Close intention dialog"
+              style={{ minHeight: 48 }}
+            />
+          </View>
+        </View>
+      </Modal>
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -152,95 +245,68 @@ export default function ParentDashboardScreen() {
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.brandTitle}>Tutr Kidz</Text>
-            {childName ? (
-              <Text style={styles.childHeaderName}>{childName}</Text>
-            ) : null}
-            <Text style={styles.screenHeading}>Learning Overview</Text>
-            <Text style={styles.subtitle}>See how learning is progressing.</Text>
-
-            <View style={styles.headerActions}>
-              <PrimaryButton
-                label="Family Dashboard →"
-                variant="secondary"
-                onPress={() => router.push('/parent/family')}
-                style={styles.headerButton}
-                accessibilityLabel="Family Dashboard"
-                accessibilityHint="Navigates to family overview across all learners"
-              />
-              <PrimaryButton
-                label="Switch learner →"
-                variant="tertiary"
-                onPress={() => router.push('/parent/children')}
-                style={styles.headerButton}
-                accessibilityLabel="Switch learner"
-                accessibilityHint="Navigates to learner selector"
-              />
-              <PrimaryButton
-                label="Parent Settings →"
-                variant="tertiary"
-                onPress={() => router.push('/parent/settings')}
-                style={styles.headerButton}
-                accessibilityLabel="Parent settings"
-                accessibilityHint="Navigates to parent settings and preferences"
-              />
-              <PrimaryButton
-                label="Data & Privacy →"
-                variant="tertiary"
-                onPress={() => router.push('/parent/data')}
-                style={styles.headerButton}
-                accessibilityLabel="Data and privacy"
-                accessibilityHint="Navigates to data and privacy management"
-              />
-              {lockEnabled && isParentUnlocked() ? (
-                <PrimaryButton
-                  label="Lock controls"
-                  variant="tertiary"
-                  onPress={handleManualLock}
-                  style={styles.headerButton}
-                  accessibilityLabel="Lock parent controls"
-                  accessibilityHint="Locks parent controls and returns home"
-                />
-              ) : null}
-            </View>
+            <Text style={styles.screenHeading}>Family Home</Text>
+            <Text style={styles.subtitle}>Calm, private overview of your family's learning.</Text>
           </View>
 
-          {/* Child Learning Metrics Overview */}
-          <View style={styles.metricsCard}>
-            <View style={styles.metricBlock}>
-              <Text style={styles.metricLabel}>Current level</Text>
-              <Text style={styles.metricValue}>{levelTitle}</Text>
+          {/* 1. ACTIVE LEARNER HIERARCHY */}
+          <View style={styles.activeLearnerCard} accessible={true} accessibilityRole="summary" accessibilityLabel="Active Learner Overview">
+            <View style={styles.learnerHeaderRow}>
+              <View style={styles.learnerInfo}>
+                <Text style={styles.learnerLabel}>Active Learner</Text>
+                <Text style={styles.learnerName}>{childName || 'No learner active'}</Text>
+                <Text style={styles.learnerLevel}>{levelTitle}</Text>
+              </View>
+              <Pressable
+                onPress={() => router.push('/parent/children')}
+                accessible={true}
+                accessibilityRole="button"
+                accessibilityLabel="Switch learner"
+                accessibilityHint="Opens learner selection to choose who is learning"
+                style={({ pressed }) => [
+                  styles.switchLearnerBtn,
+                  pressed && styles.switchLearnerBtnPressed,
+                ]}
+              >
+                <Text style={styles.switchLearnerBtnText}>Switch Learner →</Text>
+              </Pressable>
             </View>
-            <View style={styles.metricDivider} />
-            <View style={styles.metricBlock}>
-              <Text style={styles.metricLabel}>Today's practice</Text>
-              <Text style={styles.metricValue}>{todayQuestions} questions</Text>
-            </View>
-            <View style={styles.metricDivider} />
-            <View style={styles.metricBlock}>
-              <Text style={styles.metricLabel}>Overall accuracy</Text>
-              <Text style={styles.metricValue}>{overallAccuracy}%</Text>
+
+            {/* Gentle Learning Intention Card */}
+            <View style={styles.intentionCard}>
+              <View style={styles.intentionHeaderRow}>
+                <Text style={styles.intentionEyebrow}>Gentle Learning Intention</Text>
+                <Pressable
+                  onPress={() => setIntentionModalVisible(true)}
+                  accessible={true}
+                  accessibilityRole="button"
+                  accessibilityLabel="Change learning intention"
+                  style={({ pressed }) => [
+                    styles.changeIntentionBtn,
+                    pressed && { opacity: 0.7 },
+                  ]}
+                >
+                  <Text style={styles.changeIntentionBtnText}>Change Intention</Text>
+                </Pressable>
+              </View>
+              <Text style={styles.intentionCurrent}>
+                "{learningPlan?.intention || 'Keep learning naturally'}"
+              </Text>
+              <Text style={styles.intentionHint}>
+                A gentle family intention without streaks, deadlines, or pressure.
+              </Text>
             </View>
           </View>
 
           {hasData ? (
             <View style={styles.mainContent}>
-              {/* Today's Learning Focus */}
-              {dailyFocus && dailyFocus.reason !== 'none' ? (
-                <View style={styles.focusCard}>
-                  <Text style={styles.focusEyebrow}>Today's Learning Focus</Text>
-                  <Text style={styles.focusTitle}>{dailyFocus.title}</Text>
-                  <Text style={styles.focusDescription}>{dailyFocus.description}</Text>
-                </View>
-              ) : null}
-
-              {/* Learning Recently (Phase 18) */}
+              {/* 2. LEARNING RECENTLY (Phase 18 & 19 Continuity & Plan-Aware Guidance) */}
               {continuity ? (
-                <View style={styles.continuityCard}>
-                  <Text style={styles.continuityEyebrow}>Learning recently</Text>
-                  
+                <View style={styles.continuityCard} accessible={true} accessibilityRole="summary" accessibilityLabel="Learning recently">
+                  <Text style={styles.continuityEyebrow}>Learning Recently</Text>
                   <View style={styles.continuityRow}>
                     <View style={styles.continuityStat}>
-                      <Text style={styles.continuityStatLabel}>Last active</Text>
+                      <Text style={styles.continuityStatLabel}>Last practice</Text>
                       <Text style={styles.continuityStatValue}>
                         {formatDaysAgo(continuity.daysSinceLastPractice)}
                       </Text>
@@ -254,16 +320,16 @@ export default function ParentDashboardScreen() {
                     </View>
                     <View style={styles.metricDivider} />
                     <View style={styles.continuityStat}>
-                      <Text style={styles.continuityStatLabel}>Topics</Text>
+                      <Text style={styles.continuityStatLabel}>Sessions</Text>
                       <Text style={styles.continuityStatValue}>
-                        {continuity.recentWindow.last7DaysTopicsExplored} explored
+                        {continuity.recentWindow.last7DaysSessions} sessions
                       </Text>
                     </View>
                   </View>
 
                   <View style={styles.continuityMessageBlock}>
                     <Text style={styles.continuityTrendText}>
-                      {continuity.trendDescription}
+                      {continuity.guidance.title}
                     </Text>
                     <Text style={styles.continuityGuidanceText}>
                       {continuity.guidance.message}
@@ -272,171 +338,112 @@ export default function ParentDashboardScreen() {
                 </View>
               ) : null}
 
-              {/* Learning Overview (Phase 15) */}
-              {learningSummary ? (
-                <View style={styles.learningOverviewCard}>
-                  <View style={styles.overviewHeaderRow}>
-                    <Text style={styles.overviewTitle}>Learning overview</Text>
-                    {activeChildRecord ? (
-                      <TouchableOpacity
-                        onPress={() => router.push(`/parent/family/${activeChildRecord.profile.id}/insights`)}
-                        style={styles.overviewInsightsLink}
-                        accessibilityRole="link"
-                        accessibilityLabel="View detailed learning insights"
-                      >
-                        <Text style={styles.overviewInsightsLinkText}>Details →</Text>
-                      </TouchableOpacity>
-                    ) : null}
-                  </View>
-
-                  <View style={styles.overviewStatsRow}>
-                    <Text style={styles.overviewStatPill}>
-                      {learningSummary.topicsExplored} topics explored
-                    </Text>
-                    <Text style={styles.overviewStatDot}>•</Text>
-                    <Text style={styles.overviewStatPill}>
-                      {learningSummary.questionsAnswered} questions answered
-                    </Text>
-                    <Text style={styles.overviewStatDot}>•</Text>
-                    <Text style={styles.overviewStatPill}>
-                      {learningSummary.quizAttempts} practice sessions
-                    </Text>
-                  </View>
-
-                  {learningSummary.recentlyPracticed.length > 0 ? (
-                    <View style={styles.overviewCategoryGroup}>
-                      <Text style={styles.overviewCategoryLabel}>Recently practiced</Text>
-                      {learningSummary.recentlyPracticed.slice(0, 3).map((item) => (
-                        <Text key={item.topicId} style={styles.overviewItemBullet}>
-                          • {item.title}
-                        </Text>
-                      ))}
-                    </View>
-                  ) : null}
-
-                  {learningSummary.buildingConfidence.length > 0 ? (
-                    <View style={styles.overviewCategoryGroup}>
-                      <Text style={styles.overviewCategoryLabel}>Building confidence</Text>
-                      {learningSummary.buildingConfidence.slice(0, 3).map((item) => (
-                        <Text key={item.topicId} style={styles.overviewItemBullet}>
-                          • {item.title}
-                        </Text>
-                      ))}
-                    </View>
-                  ) : null}
-
-                  {learningSummary.notYetExplored.length > 0 ? (
-                    <View style={styles.overviewCategoryGroup}>
-                      <Text style={styles.overviewCategoryLabel}>Not yet explored</Text>
-                      {learningSummary.notYetExplored.slice(0, 3).map((item) => (
-                        <Text key={item.topicId} style={styles.overviewItemBullet}>
-                          • {item.title}
-                        </Text>
-                      ))}
-                    </View>
-                  ) : null}
-
-                  {activeChildRecord ? (
-                    <TouchableOpacity
-                      onPress={() => router.push(`/parent/family/${activeChildRecord.profile.id}/insights`)}
-                      style={styles.fullInsightsButton}
-                      accessibilityRole="button"
-                      accessibilityLabel="View all learning insights"
-                    >
-                      <Text style={styles.fullInsightsButtonText}>View all learning insights →</Text>
-                    </TouchableOpacity>
-                  ) : null}
+              {/* 3. CONTINUE EXPLORING (Daily Focus / Next Natural Topic) */}
+              {dailyFocus ? (
+                <View style={styles.focusCard} accessible={true} accessibilityRole="summary" accessibilityLabel="Continue exploring recommendation">
+                  <Text style={styles.focusEyebrow}>Continue Exploring</Text>
+                  <Text style={styles.focusTitle}>{dailyFocus.title}</Text>
+                  <Text style={styles.focusDescription}>{dailyFocus.description}</Text>
                 </View>
               ) : null}
 
-              {/* Learning by Level */}
-              <View style={styles.section}>
-                <Text style={styles.sectionHeading}>Learning by Level</Text>
-                <View style={styles.levelList}>
-                  {levelInsights.map((level) => (
-                    <LevelInsightCard
-                      key={level.level}
-                      insight={level}
-                      onPress={() => handleSelectLevel(level.level)}
-                    />
-                  ))}
-                </View>
-              </View>
-
-              {/* Suggested Practice */}
-              {practiceTopics.length > 0 ? (
-                <View style={styles.section}>
-                  <Text style={styles.sectionHeading}>Suggested Practice</Text>
+              {/* 4. TOPICS WORTH REVISITING */}
+              {revisitTopics.length > 0 ? (
+                <View style={styles.section} accessible={true} accessibilityRole="summary" accessibilityLabel="Topics worth revisiting">
+                  <Text style={styles.sectionHeading}>Topics Worth Revisiting</Text>
+                  <Text style={styles.sectionSubheading}>
+                    Concepts practiced earlier that can be gently revisited whenever your learner is curious.
+                  </Text>
                   <View style={styles.practiceList}>
-                    {practiceTopics.map((topic) => (
-                      <PracticeInsightCard
-                        key={`${topic.level}:${topic.topic}`}
-                        topic={topic}
-                        onPractice={() => handlePracticeTopic(topic)}
-                      />
+                    {revisitTopics.map((topic) => (
+                      <View key={topic.topicId} style={styles.revisitCard}>
+                        <View style={styles.revisitHeaderRow}>
+                          <Text style={styles.revisitTitle}>{topic.title}</Text>
+                          <Text style={styles.revisitBadge}>Gentle revisit</Text>
+                        </View>
+                        <Text style={styles.revisitDescription}>
+                          {topic.isToddler
+                            ? 'Ready to explore again when your toddler is curious.'
+                            : 'A gentle revisit can help keep this concept fresh and familiar.'}
+                        </Text>
+                      </View>
                     ))}
                   </View>
                 </View>
               ) : null}
 
-              {/* Strong Progress */}
-              {strongestTopics.length > 0 ? (
-                <View style={styles.section}>
-                  <StrongProgress topics={strongestTopics} />
+              {/* Learning Progress Summary Link */}
+              {activeChildRecord ? (
+                <View style={styles.insightsCard}>
+                  <Text style={styles.insightsCardTitle}>Detailed Learner Insights</Text>
+                  <Text style={styles.insightsCardDescription}>
+                    View chronological learning history, mastery breakdown, and practice patterns for {childName}.
+                  </Text>
+                  <PrimaryButton
+                    label="View Full Learning Insights →"
+                    variant="secondary"
+                    onPress={() => router.push(`/parent/family/${activeChildRecord.profile.id}/insights`)}
+                    style={{ minHeight: 48 }}
+                    accessibilityLabel={`View learning insights for ${childName}`}
+                  />
                 </View>
               ) : null}
 
-              {/* Recent Activity */}
-              {recentActivity.length > 0 ? (
-                <View style={styles.section}>
-                  <RecentActivity activities={recentActivity} />
+              {/* 5. FAMILY NAVIGATION */}
+              <View style={styles.navigationSection}>
+                <Text style={styles.sectionHeading}>Family Controls</Text>
+                <View style={styles.headerActions}>
+                  <PrimaryButton
+                    label="All Learners Overview →"
+                    variant="secondary"
+                    onPress={() => router.push('/parent/family')}
+                    style={styles.headerButton}
+                    accessibilityLabel="Family Dashboard"
+                    accessibilityHint="Navigates to family overview across all learners"
+                  />
+                  <PrimaryButton
+                    label="Parent Settings →"
+                    variant="tertiary"
+                    onPress={() => router.push('/parent/settings')}
+                    style={styles.headerButton}
+                    accessibilityLabel="Parent settings"
+                    accessibilityHint="Navigates to parent settings and preferences"
+                  />
+                  <PrimaryButton
+                    label="Data & Privacy →"
+                    variant="tertiary"
+                    onPress={() => router.push('/parent/data')}
+                    style={styles.headerButton}
+                    accessibilityLabel="Data and privacy"
+                    accessibilityHint="Navigates to data and privacy management"
+                  />
+                  {lockEnabled && isParentUnlocked() ? (
+                    <PrimaryButton
+                      label="Lock controls"
+                      variant="tertiary"
+                      onPress={handleManualLock}
+                      style={styles.headerButton}
+                      accessibilityLabel="Lock parent controls"
+                      accessibilityHint="Locks parent controls and returns home"
+                    />
+                  ) : null}
                 </View>
-              ) : null}
-
-              {/* Footer actions */}
-              <View style={styles.footer}>
-                <PrimaryButton
-                  label="Family Dashboard →"
-                  variant="secondary"
-                  onPress={() => router.push('/parent/family')}
-                  accessibilityLabel="Family Dashboard"
-                  accessibilityHint="Navigates to family overview"
-                />
-                <PrimaryButton
-                  label="Parent Settings →"
-                  variant="tertiary"
-                  onPress={() => router.push('/parent/settings')}
-                  accessibilityLabel="Parent Settings"
-                  accessibilityHint="Navigates to parent settings"
-                />
-                <PrimaryButton
-                  label="Data & Privacy →"
-                  variant="tertiary"
-                  onPress={() => router.push('/parent/data')}
-                  accessibilityLabel="Data and Privacy"
-                  accessibilityHint="Navigates to data and privacy"
-                />
-                <PrimaryButton
-                  label="Back"
-                  variant="tertiary"
-                  onPress={() => router.back()}
-                  accessibilityLabel="Go back"
-                  accessibilityHint="Returns to previous screen"
-                />
               </View>
             </View>
           ) : (
-            /* Empty State */
+            /* Graceful Empty State */
             <View style={styles.emptyContainer}>
               <View style={styles.emptyCard}>
-                <Text style={styles.emptyTitle}>Learning History</Text>
+                <Text style={styles.emptyTitle}>
+                  {childName ? `Welcome, ${childName}!` : 'Welcome to Tutr Kidz'}
+                </Text>
                 <Text style={styles.emptyMessage}>
                   {childName
-                    ? `Learning progress for ${childName} will appear here after their first quiz.`
-                    : 'Learning progress will appear here after the first quiz.'}
+                    ? `Learning progress for ${childName} will appear here after their first exploration.`
+                    : 'Learning progress will appear here after the first exploration.'}
                 </Text>
                 <Text style={styles.emptySubmessage}>
-                  Complete a quiz to start building learning insights.
+                  Start an activity or quiz to begin building your child's learning journey.
                 </Text>
               </View>
 
@@ -447,6 +454,13 @@ export default function ParentDashboardScreen() {
                   onPress={() => router.replace('/')}
                   accessibilityLabel="Start learning"
                   accessibilityHint="Navigates to home screen"
+                />
+                <PrimaryButton
+                  label="Family Overview →"
+                  variant="tertiary"
+                  onPress={() => router.push('/parent/family')}
+                  accessibilityLabel="Family overview"
+                  accessibilityHint="Navigates to family overview"
                 />
               </View>
             </View>
@@ -494,13 +508,6 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
     marginBottom: spacing.xs,
   },
-  childHeaderName: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: colors.text,
-    letterSpacing: -0.5,
-    marginTop: spacing.xs,
-  },
   screenHeading: {
     fontSize: 28,
     fontWeight: '800',
@@ -513,220 +520,102 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.textSecondary,
     textAlign: 'center',
-    marginBottom: spacing.md,
   },
-  headerActions: {
-    width: '100%',
-    gap: spacing.xs,
-    marginTop: spacing.xs,
-  },
-  headerButton: {
-    minHeight: 44,
-  },
-  metricsCard: {
+  activeLearnerCard: {
     backgroundColor: colors.card,
-    borderRadius: 20,
-    borderWidth: 1,
+    borderRadius: layout.borderRadius.lg,
+    borderWidth: 1.5,
     borderColor: colors.border,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    marginBottom: spacing.xxl,
-    boxShadow: "0 1px 4px rgba(0, 0, 0, 0.02)",
+    padding: spacing.xl,
+    marginBottom: spacing.xl,
+    gap: spacing.lg,
+    boxShadow: "0 2px 6px rgba(0, 0, 0, 0.03)",
     elevation: 1,
   },
-  metricBlock: {
-    flex: 1,
-    alignItems: 'center',
-    paddingHorizontal: spacing.xs,
-  },
-  metricLabel: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  metricValue: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.text,
-    letterSpacing: -0.3,
-    textAlign: 'center',
-  },
-  metricDivider: {
-    width: 1,
-    height: 36,
-    backgroundColor: colors.border,
-  },
-  focusCard: {
-    backgroundColor: colors.card,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: '#E8E5DF',
-    padding: spacing.xl,
-    boxShadow: "0 1px 4px rgba(0, 0, 0, 0.02)",
-    elevation: 1,
-  },
-  focusEyebrow: {
-    fontSize: 12,
-    fontWeight: 700,
-    color: colors.accent,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: spacing.xs,
-  },
-  focusTitle: {
-    fontSize: 20,
-    fontWeight: 800,
-    color: colors.text,
-    letterSpacing: -0.3,
-    marginBottom: 4,
-  },
-  focusDescription: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    lineHeight: 20,
-  },
-  mainContent: {
-    gap: spacing.xxl,
-  },
-  section: {
-    width: '100%',
-  },
-  sectionHeading: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.text,
-    letterSpacing: -0.3,
-    marginBottom: spacing.md,
-  },
-  levelList: {
-    gap: spacing.xs,
-  },
-  practiceList: {
-    gap: spacing.sm,
-  },
-  footer: {
-    width: '100%',
-    marginTop: spacing.md,
-    gap: spacing.sm,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    gap: spacing.xxl,
-  },
-  emptyCard: {
-    backgroundColor: colors.card,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingVertical: spacing.huge,
-    paddingHorizontal: spacing.xxl,
-    alignItems: 'center',
-    width: '100%',
-    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.03)",
-    elevation: 1.5,
-  },
-  emptyTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.text,
-    letterSpacing: -0.4,
-    marginBottom: spacing.sm,
-    textAlign: 'center',
-  },
-  emptyMessage: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: spacing.xs,
-  },
-  emptySubmessage: {
-    fontSize: 14,
-    color: colors.textMuted,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  learningOverviewCard: {
-    backgroundColor: colors.card,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: '#E8E5DF',
-    padding: spacing.xl,
-    gap: spacing.md,
-  },
-  overviewHeaderRow: {
+  learnerHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  overviewTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: colors.text,
-    letterSpacing: -0.3,
+  learnerInfo: {
+    gap: 2,
   },
-  overviewInsightsLink: {
-    minHeight: 44,
-    justifyContent: 'center',
-  },
-  overviewInsightsLinkText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.accent,
-  },
-  overviewStatsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: 6,
-    paddingBottom: spacing.xs,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  overviewStatPill: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  overviewStatDot: {
-    fontSize: 13,
-    color: colors.border,
-  },
-  overviewCategoryGroup: {
-    gap: 4,
-  },
-  overviewCategoryLabel: {
+  learnerLabel: {
     fontSize: 12,
     fontWeight: '700',
     color: colors.accent,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginBottom: 2,
   },
-  overviewItemBullet: {
-    fontSize: 14,
+  learnerName: {
+    fontSize: 24,
+    fontWeight: '800',
     color: colors.text,
-    lineHeight: 20,
-    paddingLeft: spacing.xs,
+    letterSpacing: -0.4,
   },
-  fullInsightsButton: {
-    marginTop: spacing.xs,
-    paddingVertical: spacing.sm,
-    alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  fullInsightsButtonText: {
+  learnerLevel: {
     fontSize: 14,
+    color: colors.textSecondary,
+    fontWeight: '500',
+  },
+  switchLearnerBtn: {
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: layout.borderRadius.md,
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  switchLearnerBtnPressed: {
+    backgroundColor: colors.cardPressed,
+  },
+  switchLearnerBtnText: {
+    fontSize: 13,
     fontWeight: '700',
     color: colors.accent,
+  },
+  intentionCard: {
+    backgroundColor: colors.background,
+    borderRadius: layout.borderRadius.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: spacing.xs,
+  },
+  intentionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  intentionEyebrow: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  changeIntentionBtn: {
+    paddingVertical: 2,
+  },
+  changeIntentionBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.accent,
+  },
+  intentionCurrent: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.text,
+    fontStyle: 'italic',
+  },
+  intentionHint: {
+    fontSize: 12,
+    color: colors.textMuted,
+  },
+  mainContent: {
+    gap: spacing.xl,
   },
   continuityCard: {
     backgroundColor: colors.card,
@@ -734,12 +623,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.xl,
-    marginBottom: spacing.xl,
     boxShadow: "0 2px 6px rgba(0, 0, 0, 0.03)",
     elevation: 1,
   },
   continuityEyebrow: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     color: colors.textSecondary,
     textTransform: 'uppercase',
@@ -768,18 +656,228 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.text,
   },
+  metricDivider: {
+    width: 1,
+    height: 36,
+    backgroundColor: colors.border,
+  },
   continuityMessageBlock: {
     marginTop: spacing.md,
     gap: 4,
   },
   continuityTrendText: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
     color: colors.text,
   },
   continuityGuidanceText: {
     fontSize: 14,
     color: colors.textSecondary,
     lineHeight: 20,
+  },
+  focusCard: {
+    backgroundColor: colors.card,
+    borderRadius: layout.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.xl,
+    gap: spacing.xs,
+  },
+  focusEyebrow: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.accent,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  focusTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: colors.text,
+  },
+  focusDescription: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 20,
+  },
+  section: {
+    gap: spacing.sm,
+  },
+  sectionHeading: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text,
+    letterSpacing: -0.3,
+  },
+  sectionSubheading: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
+  },
+  practiceList: {
+    gap: spacing.sm,
+  },
+  revisitCard: {
+    backgroundColor: colors.card,
+    borderRadius: layout.borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+    gap: 4,
+  },
+  revisitHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  revisitTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  revisitBadge: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.accent,
+    backgroundColor: colors.accentLight,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  revisitDescription: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 18,
+  },
+  insightsCard: {
+    backgroundColor: colors.card,
+    borderRadius: layout.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.xl,
+    gap: spacing.sm,
+  },
+  insightsCardTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: colors.text,
+  },
+  insightsCardDescription: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 20,
+    marginBottom: spacing.xs,
+  },
+  navigationSection: {
+    gap: spacing.md,
+    marginTop: spacing.md,
+  },
+  headerActions: {
+    width: '100%',
+    gap: spacing.sm,
+  },
+  headerButton: {
+    minHeight: 48,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    gap: spacing.xxl,
+  },
+  emptyCard: {
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingVertical: spacing.huge,
+    paddingHorizontal: spacing.xxl,
+    alignItems: 'center',
+    width: '100%',
+  },
+  emptyTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: colors.text,
+    letterSpacing: -0.4,
+    marginBottom: spacing.sm,
+    textAlign: 'center',
+  },
+  emptyMessage: {
+    fontSize: 15,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: spacing.xs,
+  },
+  emptySubmessage: {
+    fontSize: 13,
+    color: colors.textMuted,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  footer: {
+    width: '100%',
+    gap: spacing.sm,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.xl,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: layout.maxWidth,
+    backgroundColor: colors.card,
+    borderRadius: layout.borderRadius.lg,
+    padding: spacing.xl,
+    gap: spacing.md,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: colors.text,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 20,
+  },
+  intentionList: {
+    gap: spacing.sm,
+    marginVertical: spacing.xs,
+  },
+  intentionOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: layout.borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.background,
+    minHeight: 52,
+  },
+  intentionOptionSelected: {
+    borderColor: colors.accent,
+    backgroundColor: '#FAF9FF',
+  },
+  intentionOptionPressed: {
+    backgroundColor: colors.cardPressed,
+  },
+  intentionOptionText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  intentionOptionTextSelected: {
+    color: colors.accent,
+    fontWeight: '700',
+  },
+  intentionCheck: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: colors.accent,
   },
 });

@@ -273,6 +273,39 @@ export default function ParentDataScreen() {
             </View>
           </View>
 
+          {/* Transparent Privacy & Data Information Card (Phase 19) */}
+          <View style={styles.privacyCard} accessible={true} accessibilityRole="summary" accessibilityLabel="How Tutr Kidz handles your family data">
+            <Text style={styles.privacyCardTitle}>How your family's data is handled</Text>
+            <View style={styles.privacyBulletRow}>
+              <Text style={styles.privacyBulletDot}>•</Text>
+              <Text style={styles.privacyBulletText}>
+                <Text style={styles.privacyBulletBold}>On Your Device: </Text>
+                All learning progress, questions answered, and family settings are always stored locally first, so learning continues even without internet.
+              </Text>
+            </View>
+            <View style={styles.privacyBulletRow}>
+              <Text style={styles.privacyBulletDot}>•</Text>
+              <Text style={styles.privacyBulletText}>
+                <Text style={styles.privacyBulletBold}>In the Cloud: </Text>
+                When signed in to a parent account, data syncs safely to your private family database. Children never have direct login tokens or credentials.
+              </Text>
+            </View>
+            <View style={styles.privacyBulletRow}>
+              <Text style={styles.privacyBulletDot}>•</Text>
+              <Text style={styles.privacyBulletText}>
+                <Text style={styles.privacyBulletBold}>Data Export: </Text>
+                You can inspect or download your full raw family data at any time as JSON using the export option below.
+              </Text>
+            </View>
+            <View style={styles.privacyBulletRow}>
+              <Text style={styles.privacyBulletDot}>•</Text>
+              <Text style={styles.privacyBulletText}>
+                <Text style={styles.privacyBulletBold}>Data Removal: </Text>
+                You can reset individual child records, clear all local device progress, or permanently delete your cloud parent account below.
+              </Text>
+            </View>
+          </View>
+
           {/* Section: Cloud Backup */}
           <SettingsSection
             title="Cloud backup"
@@ -741,6 +774,42 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.text,
     fontWeight: '700',
+  },
+  privacyCard: {
+    backgroundColor: colors.card,
+    borderRadius: layout.borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.lg,
+    marginBottom: spacing.xl,
+    gap: spacing.sm,
+  },
+  privacyCardTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: spacing.xs,
+  },
+  privacyBulletRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.xs,
+  },
+  privacyBulletDot: {
+    fontSize: 15,
+    color: colors.accent,
+    fontWeight: '700',
+    lineHeight: 20,
+  },
+  privacyBulletText: {
+    flex: 1,
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 20,
+  },
+  privacyBulletBold: {
+    fontWeight: '700',
+    color: colors.text,
   },
   deleteActions: {
     gap: spacing.sm,

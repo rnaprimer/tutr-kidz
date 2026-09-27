@@ -1,3 +1,4 @@
+import type { LearningPlan } from '../plans/planTypes';
 /**
  * Tutr Kidz - Learning Continuity & Parent Intelligence Utilities (Phase 18)
  *
@@ -223,7 +224,8 @@ export function getPracticeFrequency(
 export function getLearningContinuity(
   progress?: ProgressState | null,
   level: CurriculumLevel = 'class-1',
-  referenceDate?: Date
+  referenceDate?: Date,
+  plan?: LearningPlan | null
 ): LearningContinuity {
   const lastActiveDate = getLastActiveDate(progress);
   const daysSinceLastPractice = getDaysSinceLastPractice(lastActiveDate, referenceDate);
@@ -254,7 +256,7 @@ export function getLearningContinuity(
     stateLabel = 'Ready to Revisit';
   }
 
-  const guidance = getParentLearningGuidance(progress, level, referenceDate);
+  const guidance = getParentLearningGuidance(progress, level, referenceDate, plan);
 
   return {
     state,
@@ -275,7 +277,8 @@ export function getLearningContinuity(
 export function getParentLearningGuidance(
   progress?: ProgressState | null,
   level: CurriculumLevel = 'class-1',
-  referenceDate?: Date
+  referenceDate?: Date,
+  plan?: LearningPlan | null
 ): ParentLearningGuidance {
   const totalQuestions = progress?.overall?.totalQuestionsAnswered ?? 0;
 
@@ -334,11 +337,59 @@ export function getParentLearningGuidance(
     };
   }
 
-  return {
+  const baseResult: ParentLearningGuidance = {
     title: 'Natural Pace',
     message: 'Keep exploring topics naturally as your child is ready.',
     reason: 'exploring',
   };
+
+  if (plan && plan.enabled) {
+    if (plan.intention === 'Explore new topics') {
+      const topics = getTopicsForLevel(level);
+      const unattempted = topics.find((t) => {
+        const rec = progress?.topics?.[t.id] || progress?.topics?.[level + ':' + t.id];
+        return !rec || rec.attempts === 0;
+      });
+      if (unattempted) {
+        return {
+          title: 'Explore When Ready',
+          message: unattempted.title + ' has not been explored yet. You can explore it whenever your learner is ready.',
+          reason: 'exploring',
+          suggestedTopicId: unattempted.id,
+          suggestedTopicTitle: unattempted.title,
+        };
+      }
+    } else if (plan.intention === 'Practice when ready') {
+      const topics = getTopicsForLevel(level);
+      const practiced = topics.find((t) => {
+        const rec = progress?.topics?.[t.id] || progress?.topics?.[level + ':' + t.id];
+        return rec && rec.attempts >= 1 && rec.questionsAnswered < 15;
+      });
+      if (practiced) {
+        return {
+          title: 'Gentle Familiarity',
+          message: practiced.title + ' has been practiced before. A few more questions could help build familiarity.',
+          reason: 'consistent',
+          suggestedTopicId: practiced.id,
+          suggestedTopicTitle: practiced.title,
+        };
+      }
+    } else if (plan.intention === 'Focus on mathematics') {
+      return {
+        title: 'Core Mathematics',
+        message: 'Taking time with core math ideas builds steady, lifelong confidence.',
+        reason: 'consistent',
+      };
+    } else if (plan.intention === 'Explore a little each day') {
+      return {
+        title: 'Gentle Daily Rhythm',
+        message: 'A few minutes of gentle exploration keeps learning fresh and enjoyable.',
+        reason: 'consistent',
+      };
+    }
+  }
+
+  return baseResult;
 }
 
 /**

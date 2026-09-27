@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
+import { trackEvent } from '../../lib/analytics';
 import { colors, layout, spacing } from '../../constants/colors';
 import { getLevelById } from '../../constants/levels';
 import { getFamilyState, setActiveChild } from '../../features/family/familyStorage';
@@ -30,6 +31,7 @@ export default function LearnersScreen() {
   );
 
   const handleSelectChild = async (childId: string) => {
+    trackEvent('child_switched');
     await setActiveChild(childId);
     router.replace('/');
   };

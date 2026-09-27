@@ -242,6 +242,15 @@ export async function flushSyncQueue(): Promise<{ processed: number; errors: num
         await client.from('quiz_attempts').insert(item.payload);
       } else if (item.entityType === 'family_settings') {
         await client.from('family_settings').upsert(item.payload);
+      } else if (item.entityType === 'learning_plan') {
+        try {
+          const { error } = await client.from('learning_plans').upsert(item.payload);
+          if (error && error.code !== '42P01' && !error.message?.includes('does not exist')) {
+            throw error;
+          }
+        } catch (planErr) {
+          // Local persistence remains authoritative if table is not yet migrated in Supabase
+        }
       }
 
       await removeQueueItem(item.id);

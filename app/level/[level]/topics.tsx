@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { trackEvent } from '../../../lib/analytics';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
@@ -19,6 +20,10 @@ export default function LevelTopicsScreen() {
   const topics = getTopicsForLevel(levelId);
 
   const [progress, setProgress] = useState<ProgressState>(DEFAULT_PROGRESS);
+
+  useEffect(() => {
+    trackEvent('topic_exploration_opened');
+  }, []);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -84,8 +89,10 @@ export default function LevelTopicsScreen() {
               const record = topicProgress[topic.id];
               const progressText =
                 record && record.attempts >= 1
-                  ? `${getTopicAccuracy(record)}% accuracy`
-                  : 'Not started';
+                  ? record.questionsAnswered >= 15
+                    ? 'Familiar'
+                    : 'Practiced'
+                  : 'Ready to explore';
 
               return (
                 <TopicCard

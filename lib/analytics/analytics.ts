@@ -15,7 +15,13 @@ export type AnalyticsEventType =
   | 'quiz_started'
   | 'quiz_completed'
   | 'parent_dashboard_opened'
-  | 'learning_insights_opened';
+  | 'learning_insights_opened'
+  | 'family_dashboard_opened'
+  | 'child_switched'
+  | 'learning_plan_created'
+  | 'learning_plan_updated'
+  | 'learning_history_opened'
+  | 'topic_exploration_opened';
 
 export interface AnalyticsEvent {
   event: AnalyticsEventType;
@@ -59,7 +65,7 @@ class AnalyticsManager {
         for (const [key, val] of Object.entries(properties)) {
           // Reject keys that might contain personal names or child IDs
           const lower = key.toLowerCase();
-          if (lower.includes('name') || lower.includes('childid') || lower.includes('email')) {
+          if (lower.includes('name') || lower.includes('childid') || lower.includes('child_id') || lower.includes('learner_id') || lower.includes('email')) {
             continue;
           }
           if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean') {

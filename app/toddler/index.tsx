@@ -8,7 +8,7 @@ import { ToddlerActivityCard } from '../../components/toddler/ToddlerActivityCar
 import { ToddlerActivityId } from '../../types/quiz';
 import { ProgressState } from '../../features/progress/types';
 import { DEFAULT_PROGRESS, getProgress } from '../../features/progress/progressStorage';
-import { getLevelTopicProgress, getTopicAccuracy } from '../../features/progress/progressUtils';
+import { getLevelTopicProgress } from '../../features/progress/progressUtils';
 
 interface ActivityItem {
   id: ToddlerActivityId;
@@ -66,8 +66,8 @@ export default function ToddlerActivitySelectionScreen() {
               const record = toddlerProgress[activity.id];
               const progressText =
                 record && record.attempts >= 1
-                  ? `${getTopicAccuracy(record)}% accuracy`
-                  : 'Not started';
+                  ? 'Explored recently'
+                  : 'Ready to explore';
 
               return (
                 <ToddlerActivityCard

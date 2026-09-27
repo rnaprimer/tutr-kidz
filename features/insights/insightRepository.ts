@@ -1,3 +1,4 @@
+import { getLearningPlan } from '../plans/planRepository';
 import { getFamilyState } from '../family/familyRepository';
 import { getProgress } from '../progress/progressRepository';
 import { getOverallAccuracy } from '../progress/progressUtils';
@@ -142,7 +143,8 @@ export async function fetchParentDashboardData(
     learningSummary = getLearningSummary(familyState.children[targetId], progress);
   }
 
-  const continuity = getLearningContinuity(progress, childLevel);
+  const plan = targetId ? await getLearningPlan(targetId) : null;
+  const continuity = getLearningContinuity(progress, childLevel, undefined, plan);
   const topicHistory = getTopicHistory(progress, childLevel);
 
   return {

@@ -14,6 +14,9 @@ import { PrimaryButton } from '../../../../components/ui/PrimaryButton';
 import { ParentLockChallengeModal } from '../../../../components/settings/ParentLockChallengeModal';
 import { useParentAccess } from '../../../../features/settings/useParentAccess';
 import { getFamilyState } from '../../../../features/family/familyRepository';
+import { getProgress } from '../../../../features/progress/progressStorage';
+import { getChronologicalLearningHistory } from '../../../../features/plans/planUtils';
+import { ChronologicalHistory } from '../../../../features/plans/planTypes';
 import { ChildRecord } from '../../../../features/family/familyTypes';
 import { getLevelById } from '../../../../constants/levels';
 import {
@@ -44,6 +47,7 @@ export default function ChildLearningInsightsScreen() {
   const [topicInsights, setTopicInsights] = useState<TopicInsight[]>([]);
   const [continuity, setContinuity] = useState<LearningContinuity | null>(null);
   const [topicHistory, setTopicHistory] = useState<TopicHistoryItem[]>([]);
+  const [chronoHistory, setChronoHistory] = useState<ChronologicalHistory | null>(null);
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
@@ -53,17 +57,21 @@ export default function ChildLearningInsightsScreen() {
       const current = familyState.children[childId];
       if (current) {
         setChildRecord(current);
-        const [sum, topics, cont, hist] = await Promise.all([
+        const [sum, topics, cont, hist, prog] = await Promise.all([
           fetchChildLearningSummary(childId),
           fetchChildTopicInsights(childId),
           fetchChildLearningContinuity(childId),
           fetchChildTopicHistory(childId, current.profile.level),
+          getProgress(childId),
         ]);
+        const chrono = getChronologicalLearningHistory(prog, current.profile.level);
         setSummary(sum);
         setTopicInsights(topics);
         setContinuity(cont);
         setTopicHistory(hist);
+        setChronoHistory(chrono);
         trackEvent('learning_insights_opened');
+        trackEvent('learning_history_opened');
       }
     } catch {
       // offline fallback handled gracefully
@@ -328,6 +336,70 @@ export default function ChildLearningInsightsScreen() {
             );
           })()}
 
+          {/* Chronological Learning History (Phase 19) */}
+          <View style={styles.section} accessible={true} accessibilityRole="summary" accessibilityLabel="Chronological Learning History">
+            <Text style={styles.sectionHeading}>Learning History</Text>
+            {chronoHistory && chronoHistory.totalEntries > 0 ? (
+              <View style={styles.chronoContainer}>
+                {chronoHistory.recently.length > 0 ? (
+                  <View style={styles.chronoGroup}>
+                    <Text style={styles.chronoSubheading}>Recently</Text>
+                    {chronoHistory.recently.map((entry, idx) => (
+                      <View key={'recent-' + entry.topicId + '-' + idx} style={styles.historyCard}>
+                        <View style={styles.historyCardHeader}>
+                          <Text style={styles.historyCardTitle}>{entry.topicTitle}</Text>
+                          <Text style={styles.historyCardDate}>{entry.dateFormatted}</Text>
+                        </View>
+                        <View style={styles.historyCardDetails}>
+                          <Text style={styles.historyCardType}>{entry.activityType}</Text>
+                          {entry.questionsAnswered > 0 ? (
+                            <>
+                              <Text style={styles.historyCardDot}>•</Text>
+                              <Text style={styles.historyCardQuestions}>
+                                {entry.questionsAnswered} {entry.questionsAnswered === 1 ? 'question' : 'questions'}
+                              </Text>
+                            </>
+                          ) : null}
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                ) : null}
+
+                {chronoHistory.earlier.length > 0 ? (
+                  <View style={styles.chronoGroup}>
+                    <Text style={styles.chronoSubheading}>Earlier</Text>
+                    {chronoHistory.earlier.map((entry, idx) => (
+                      <View key={'earlier-' + entry.topicId + '-' + idx} style={styles.historyCard}>
+                        <View style={styles.historyCardHeader}>
+                          <Text style={styles.historyCardTitle}>{entry.topicTitle}</Text>
+                          <Text style={styles.historyCardDate}>{entry.dateFormatted}</Text>
+                        </View>
+                        <View style={styles.historyCardDetails}>
+                          <Text style={styles.historyCardType}>{entry.activityType}</Text>
+                          {entry.questionsAnswered > 0 ? (
+                            <>
+                              <Text style={styles.historyCardDot}>•</Text>
+                              <Text style={styles.historyCardQuestions}>
+                                {entry.questionsAnswered} {entry.questionsAnswered === 1 ? 'question' : 'questions'}
+                              </Text>
+                            </>
+                          ) : null}
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                ) : null}
+              </View>
+            ) : (
+              <View style={styles.emptyHistoryCard}>
+                <Text style={styles.emptyHistoryText}>
+                  Learning history will appear here as your child explores.
+                </Text>
+              </View>
+            )}
+          </View>
+
           {/* Detailed Topic List */}
           <View style={styles.section}>
             <Text style={styles.sectionHeading}>Topic Breakdown</Text>
@@ -537,6 +609,73 @@ const styles = StyleSheet.create({
     color: colors.text,
     letterSpacing: -0.3,
     marginBottom: spacing.md,
+  },
+  chronoContainer: {
+    gap: spacing.lg,
+  },
+  chronoGroup: {
+    gap: spacing.sm,
+  },
+  chronoSubheading: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: spacing.xs,
+  },
+  historyCard: {
+    backgroundColor: colors.card,
+    borderRadius: layout.borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+    gap: 4,
+  },
+  historyCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  historyCardTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  historyCardDate: {
+    fontSize: 13,
+    color: colors.accent,
+    fontWeight: '600',
+  },
+  historyCardDetails: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  historyCardType: {
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+  historyCardDot: {
+    fontSize: 13,
+    color: colors.border,
+  },
+  historyCardQuestions: {
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+  emptyHistoryCard: {
+    backgroundColor: colors.card,
+    borderRadius: layout.borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.xl,
+    alignItems: 'center',
+  },
+  emptyHistoryText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
   },
   topicList: {
     gap: spacing.sm,
