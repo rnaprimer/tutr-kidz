@@ -364,6 +364,19 @@ export default function ParentSettingsScreen() {
             ) : null}
           </SettingsSection>
 
+          {/* FEEDBACK & SUPPORT SECTION (Phase 20) */}
+          <SettingsSection
+            title="Feedback & Support"
+            description="Help us keep Tutr Kidz calm, simple, and distraction-free."
+          >
+            <SettingsRow
+              label="Share feedback →"
+              description="Report an issue or suggest an improvement"
+              onPress={() => router.push('/parent/feedback')}
+              rightContent={<Text style={styles.actionLinkText}>Share →</Text>}
+            />
+          </SettingsSection>
+
           {/* 5. DATA & DESTRUCTIVE SECTION */}
           <SettingsSection
             title="Data & Privacy"

@@ -1,3 +1,4 @@
+import { getFamilyState } from '../../../features/family/familyRepository';
 import React, { useState } from 'react';
 import {
   View,
@@ -63,7 +64,16 @@ export default function SignupScreen() {
     setSubmitting(false);
 
     if (res.success) {
-      router.replace('/parent/account');
+      try {
+        const fam = await getFamilyState();
+        if (Object.keys(fam.children).length === 0) {
+          router.replace('/parent/onboarding');
+        } else {
+          router.replace('/parent/account');
+        }
+      } catch {
+        router.replace('/parent/account');
+      }
     } else {
       setErrorMessage(
         res.error || "We couldn't create your account. Please check your details and try again."

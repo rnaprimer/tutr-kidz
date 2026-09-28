@@ -21,7 +21,14 @@ export type AnalyticsEventType =
   | 'learning_plan_created'
   | 'learning_plan_updated'
   | 'learning_history_opened'
-  | 'topic_exploration_opened';
+  | 'topic_exploration_opened'
+  | 'onboarding_started'
+  | 'onboarding_completed'
+  | 'learner_created'
+  | 'first_learning_session_started'
+  | 'feedback_submitted'
+  | 'feedback_sync_completed'
+  | 'production_error';
 
 export interface AnalyticsEvent {
   event: AnalyticsEventType;
@@ -65,7 +72,7 @@ class AnalyticsManager {
         for (const [key, val] of Object.entries(properties)) {
           // Reject keys that might contain personal names or child IDs
           const lower = key.toLowerCase();
-          if (lower.includes('name') || lower.includes('childid') || lower.includes('child_id') || lower.includes('learner_id') || lower.includes('email')) {
+          if (lower.includes('name') || lower.includes('childid') || lower.includes('child_id') || lower.includes('learner_id') || lower.includes('email') || lower.includes('password') || lower.includes('token') || lower.includes('secret') || lower.includes('message') || lower.includes('feedback')) {
             continue;
           }
           if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean') {

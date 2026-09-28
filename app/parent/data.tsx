@@ -300,6 +300,13 @@ export default function ParentDataScreen() {
             <View style={styles.privacyBulletRow}>
               <Text style={styles.privacyBulletDot}>•</Text>
               <Text style={styles.privacyBulletText}>
+                <Text style={styles.privacyBulletBold}>Anonymous Telemetry: </Text>
+                Basic application navigation events are anonymously recorded to ensure launch stability. Child names, emails, and personal identifiers are never transmitted.
+              </Text>
+            </View>
+            <View style={styles.privacyBulletRow}>
+              <Text style={styles.privacyBulletDot}>•</Text>
+              <Text style={styles.privacyBulletText}>
                 <Text style={styles.privacyBulletBold}>Data Removal: </Text>
                 You can reset individual child records, clear all local device progress, or permanently delete your cloud parent account below.
               </Text>

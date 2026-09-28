@@ -402,6 +402,14 @@ export default function ParentDashboardScreen() {
                     accessibilityHint="Navigates to family overview across all learners"
                   />
                   <PrimaryButton
+                    label="Share Feedback →"
+                    variant="tertiary"
+                    onPress={() => router.push('/parent/feedback')}
+                    style={styles.headerButton}
+                    accessibilityLabel="Share feedback"
+                    accessibilityHint="Navigates to parent feedback form"
+                  />
+                  <PrimaryButton
                     label="Parent Settings →"
                     variant="tertiary"
                     onPress={() => router.push('/parent/settings')}
