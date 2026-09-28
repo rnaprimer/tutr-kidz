@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { colors, layout, spacing } from '../../constants/colors';
 import { ToddlerActivityCard } from '../../components/toddler/ToddlerActivityCard';
+import { IllustratedHeader } from '../../components/illustrations/IllustratedHeader';
 import { ToddlerActivityId } from '../../types/quiz';
 import { ProgressState } from '../../features/progress/types';
 import { DEFAULT_PROGRESS, getProgress } from '../../features/progress/progressStorage';
@@ -56,9 +57,16 @@ export default function ToddlerActivitySelectionScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.contentContainer}>
+          {/* Illustrated Toddler Header */}
+          <IllustratedHeader
+            levelId="toddler"
+            title="Toddler Play"
+            subtitle="Colours, shapes, numbers & sounds"
+          />
+
           <View style={styles.header}>
-            <Text style={styles.brandTitle}>Tutr Kidz</Text>
-            <Text style={styles.sectionTitle}>What would you like to learn?</Text>
+            <Text style={styles.sectionTitle}>What would you like to explore?</Text>
+            <Text style={styles.sectionSubtitle}>Tap any activity to begin exploring together</Text>
           </View>
 
           <View style={styles.activitiesList}>
@@ -105,25 +113,24 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   header: {
-    marginBottom: spacing.xxl,
+    marginBottom: spacing.lg,
     alignItems: 'center',
   },
-  brandTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.accent,
-    letterSpacing: -0.3,
-    marginBottom: spacing.md,
-  },
   sectionTitle: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: '800',
     color: colors.text,
-    letterSpacing: -0.5,
+    letterSpacing: -0.4,
     textAlign: 'center',
-    lineHeight: 34,
+    lineHeight: 32,
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: 4,
   },
   activitiesList: {
-    gap: 2,
+    gap: 4,
   },
 });

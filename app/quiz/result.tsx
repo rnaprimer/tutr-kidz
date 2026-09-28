@@ -5,6 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { colors, layout, spacing } from '../../constants/colors';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
+import { IllustratedSuccess } from '../../components/illustrations/IllustratedSuccess';
+import { IllustratedEmptyState } from '../../components/illustrations/IllustratedEmptyState';
 import { getLevelById } from '../../constants/levels';
 import { getTopicConfig } from '../../data/curriculum';
 import { CurriculumLevel } from '../../types/curriculum';
@@ -105,14 +107,11 @@ export default function QuizResultScreen() {
       <SafeAreaView style={styles.safeArea}>
         <View style={[styles.contentContainer, { paddingHorizontal: spacing.xl, justifyContent: 'center', flex: 1, alignItems: 'center' }]}>
           <Text style={[styles.brandTitle, { marginBottom: spacing.md }]}>Tutr Kidz</Text>
-          <Text style={[styles.heading, { textAlign: 'center', marginBottom: spacing.sm }]}>No Quiz Results</Text>
-          <Text style={[styles.summaryText, { textAlign: 'center', marginBottom: spacing.xl }]}>
-            Complete a quiz to see your learning results here.
-          </Text>
-          <PrimaryButton
-            label="Return Home"
-            onPress={handleHome}
-            style={{ width: '100%', maxWidth: 280 }}
+          <IllustratedEmptyState
+            title="No Quiz Results"
+            description="Complete a quiz to see your learning results here."
+            actionLabel="Return Home"
+            onAction={handleHome}
           />
         </View>
       </SafeAreaView>
@@ -144,6 +143,7 @@ export default function QuizResultScreen() {
           </View>
 
           <View style={styles.card}>
+            <IllustratedSuccess isToddler={isToddler} />
             <Text style={styles.heading}>
               {isToddler ? "Nice exploring! 🌟" : "Great job!"}
             </Text>

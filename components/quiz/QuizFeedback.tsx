@@ -16,11 +16,11 @@ export const QuizFeedback: React.FC<QuizFeedbackProps> = ({
   customIncorrectFeedback,
 }) => {
   const message = isCorrect
-    ? customCorrectFeedback || '✓ Great!'
+    ? customCorrectFeedback || '✓ That’s right.'
     : customIncorrectFeedback ||
       (correctOptionLabel
-        ? `Not quite. The answer is ${correctOptionLabel}.`
-        : 'Not quite.');
+        ? `Let's try another. The answer was ${correctOptionLabel}.`
+        : 'Good thinking. Let’s try another.');
 
   return (
     <View
@@ -32,28 +32,32 @@ export const QuizFeedback: React.FC<QuizFeedbackProps> = ({
       accessibilityRole="alert"
       accessibilityLabel={message}
     >
-      <Text
-        style={[
-          styles.text,
-          isCorrect ? styles.textCorrect : styles.textIncorrect,
-        ]}
-      >
-        {message}
-      </Text>
+      <View style={styles.contentRow}>
+        <Text style={styles.icon}>{isCorrect ? '🌱' : '💡'}</Text>
+        <Text
+          style={[
+            styles.text,
+            isCorrect ? styles.textCorrect : styles.textIncorrect,
+          ]}
+        >
+          {message}
+        </Text>
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: layout.borderRadius.md,
+    borderRadius: layout.borderRadius.xl,
     paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xl,
     marginTop: spacing.md,
     marginBottom: spacing.xs,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
+    borderWidth: 1.5,
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.03)',
   },
   containerCorrect: {
     backgroundColor: '#F0FDF4',
@@ -63,11 +67,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEF2F2',
     borderColor: '#FECACA',
   },
+  contentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  icon: {
+    fontSize: 20,
+  },
   text: {
     fontSize: 16,
     fontWeight: '700',
     textAlign: 'center',
     lineHeight: 22,
+    flexShrink: 1,
   },
   textCorrect: {
     color: '#15803D',

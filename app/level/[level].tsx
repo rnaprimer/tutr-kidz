@@ -6,13 +6,15 @@ import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
 import { colors, layout, spacing } from '../../constants/colors';
 import { getLevelById } from '../../constants/levels';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
+import { IllustratedHeader } from '../../components/illustrations/IllustratedHeader';
 import { CurriculumLevel } from '../../types/curriculum';
+import { LevelId } from '../../types/level';
 import { ProgressState } from '../../features/progress/types';
 import { DEFAULT_PROGRESS, getProgress } from '../../features/progress/progressStorage';
 import { getLevelProgress } from '../../features/progress/progressUtils';
+import { LEVEL_THEMES } from '../../constants/theme';
 
 export default function LevelDetailScreen() {
-
   const { level: levelParam } = useLocalSearchParams<{ level: string }>();
 
   const levelId = (typeof levelParam === 'string' ? levelParam : '') as CurriculumLevel;
@@ -59,6 +61,7 @@ export default function LevelDetailScreen() {
 
   const progressSummary = getLevelProgress(progress, levelId);
   const isToddler = levelId === 'toddler';
+  const theme = LEVEL_THEMES[levelId as LevelId] || LEVEL_THEMES.toddler;
 
   const handleStart = () => {
     if (levelId === 'toddler') {
@@ -78,19 +81,20 @@ export default function LevelDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.contentContainer}>
-          <View style={styles.topSection}>
-            <Text style={styles.brandTitle}>Tutr Kidz</Text>
-            <View style={styles.badgeCard}>
-              <Text style={styles.levelHeading}>{displayTitle}</Text>
-              {displaySubtitle ? (
-                <Text style={styles.curriculumText}>{displaySubtitle}</Text>
-              ) : null}
-            </View>
-          </View>
+          {/* Illustrated Level Header */}
+          <IllustratedHeader
+            levelId={levelId as LevelId}
+            title={displayTitle}
+            subtitle={displaySubtitle}
+          />
 
           {/* Level Progress Overview */}
           <View style={styles.progressCard}>
-            <Text style={styles.progressHeading}>Your progress</Text>
+            <View style={styles.progressHeaderRow}>
+              <Text style={styles.progressIcon}>📊</Text>
+              <Text style={styles.progressHeading}>Your progress</Text>
+            </View>
+
             {progressSummary.startedTopics > 0 ? (
               <View style={styles.progressStats}>
                 <Text style={styles.progressStatText}>
@@ -99,23 +103,27 @@ export default function LevelDetailScreen() {
                     : `${progressSummary.startedTopics} of ${progressSummary.totalTopics} topics started`}
                 </Text>
                 {!isToddler ? (
-                  <Text style={styles.progressAccuracyText}>
-                    {progressSummary.accuracy}% accuracy
-                  </Text>
+                  <View style={styles.accuracyBadge}>
+                    <Text style={styles.progressAccuracyText}>
+                      {progressSummary.accuracy}% accuracy
+                    </Text>
+                  </View>
                 ) : null}
               </View>
             ) : (
-              <Text style={styles.progressEmptyText}>No activity yet.</Text>
+              <Text style={styles.progressEmptyText}>Ready for your first session!</Text>
             )}
           </View>
 
-          <View style={styles.actionCard}>
+          <View style={[styles.actionCard, { borderColor: theme.borderColor }]}>
+            <Text style={styles.promptIcon}>{theme.emblem}</Text>
             <Text style={styles.promptText}>Ready to learn?</Text>
+            <Text style={styles.promptSubtext}>Take it at your own calm pace.</Text>
 
             <PrimaryButton
               label="Start"
               onPress={handleStart}
-              style={styles.startButton}
+              style={[styles.startButton, { backgroundColor: theme.accentColor }]}
               accessibilityLabel={`Start learning ${displayTitle}`}
               accessibilityHint={
                 levelId === 'toddler'
@@ -147,10 +155,6 @@ const styles = StyleSheet.create({
     maxWidth: layout.maxWidth,
     alignSelf: 'center',
   },
-  topSection: {
-    alignItems: 'center',
-    marginBottom: spacing.xxl,
-  },
   brandTitle: {
     fontSize: 22,
     fontWeight: '700',
@@ -158,20 +162,8 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
     marginBottom: spacing.md,
   },
-  badgeCard: {
-    backgroundColor: colors.card,
-    borderRadius: layout.borderRadius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingVertical: spacing.xxl,
-    paddingHorizontal: spacing.xxl,
-    alignItems: 'center',
-    width: '100%',
-    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.03)",
-    elevation: 1.5,
-  },
   levelHeading: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '800',
     color: colors.text,
     letterSpacing: -0.5,
@@ -187,56 +179,82 @@ const styles = StyleSheet.create({
   actionCard: {
     backgroundColor: colors.card,
     borderRadius: layout.borderRadius.xl,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: colors.border,
     padding: spacing.xxl,
     alignItems: 'center',
-    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.03)",
-    elevation: 1.5,
+    boxShadow: '0 4px 14px rgba(0, 0, 0, 0.04)',
+    elevation: 2,
+  },
+  promptIcon: {
+    fontSize: 32,
+    marginBottom: spacing.xs,
   },
   promptText: {
-    fontSize: 22,
-    fontWeight: '700',
+    fontSize: 24,
+    fontWeight: '800',
     color: colors.text,
-    letterSpacing: -0.3,
-    marginBottom: spacing.xl,
+    letterSpacing: -0.4,
     textAlign: 'center',
+  },
+  promptSubtext: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: 4,
+    marginBottom: spacing.xl,
   },
   progressCard: {
     backgroundColor: colors.card,
     borderRadius: layout.borderRadius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderWidth: 1.5,
+    borderColor: '#EFEFEA',
     padding: spacing.xl,
-    marginBottom: spacing.xxl,
-    boxShadow: "0 1px 4px rgba(0, 0, 0, 0.02)",
+    marginBottom: spacing.xl,
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.03)',
     elevation: 1,
   },
+  progressHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  progressIcon: {
+    fontSize: 16,
+  },
   progressHeading: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '700',
     color: colors.text,
     letterSpacing: -0.3,
-    marginBottom: spacing.xs,
   },
   progressStats: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 2,
+    marginTop: 4,
   },
   progressStatText: {
-    fontSize: 15,
+    fontSize: 14,
     color: colors.textSecondary,
+    fontWeight: '500',
+  },
+  accuracyBadge: {
+    backgroundColor: colors.accentLight,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: layout.borderRadius.round,
   },
   progressAccuracyText: {
-    fontSize: 15,
+    fontSize: 12,
     fontWeight: '700',
     color: colors.accent,
   },
   progressEmptyText: {
-    fontSize: 15,
+    fontSize: 14,
     color: colors.textSecondary,
+    marginTop: 2,
   },
   startButton: {
     width: '100%',

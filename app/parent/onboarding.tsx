@@ -15,6 +15,7 @@ import { router } from 'expo-router';
 import { colors, layout, spacing } from '../../constants/colors';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
 import { LevelSelector } from '../../components/profile/LevelSelector';
+import { IllustratedWelcome } from '../../components/illustrations/IllustratedWelcome';
 import { CurriculumLevel } from '../../types/curriculum';
 import { getLevelById } from '../../constants/levels';
 import {
@@ -148,6 +149,7 @@ export default function ParentOnboardingScreen() {
             {/* STEP 1: WELCOME */}
             {step === 1 ? (
               <View style={styles.stepCard} accessible={true} accessibilityRole="summary" accessibilityLabel="Step 1: Welcome to Tutr Kidz">
+                <IllustratedWelcome step={1} />
                 <Text style={styles.heading}>Welcome to Tutr Kidz</Text>
                 <Text style={styles.subtitle}>
                   Simple learning for curious minds.
@@ -189,6 +191,7 @@ export default function ParentOnboardingScreen() {
             {/* STEP 2: WHO IS LEARNING TODAY */}
             {step === 2 ? (
               <View style={styles.stepCard} accessible={true} accessibilityRole="summary" accessibilityLabel="Step 2: Who is learning today">
+                <IllustratedWelcome step={2} />
                 <Text style={styles.heading}>Who is learning today?</Text>
                 <Text style={styles.subtitle}>
                   Create your first learner profile. You can add more children anytime.
@@ -241,6 +244,7 @@ export default function ParentOnboardingScreen() {
             {/* STEP 3: CHOOSE A STARTING POINT */}
             {step === 3 ? (
               <View style={styles.stepCard} accessible={true} accessibilityRole="summary" accessibilityLabel="Step 3: Choose a starting point">
+                <IllustratedWelcome step={3} />
                 <Text style={styles.heading}>Choose a starting point</Text>
                 <Text style={styles.subtitle}>
                   Select where {childName.trim() || 'your child'} will begin. You can change this anytime.
@@ -275,6 +279,7 @@ export default function ParentOnboardingScreen() {
             {/* STEP 4: YOU'RE READY */}
             {step === 4 ? (
               <View style={styles.stepCard} accessible={true} accessibilityRole="summary" accessibilityLabel="Step 4: You are ready">
+                <IllustratedWelcome step={4} />
                 <Text style={styles.heading}>You're ready!</Text>
                 <Text style={styles.subtitle}>
                   The child can explore at their own pace.

@@ -8,11 +8,13 @@ import { colors, layout, spacing } from '../../../constants/colors';
 import { getLevelById } from '../../../constants/levels';
 import { getTopicsForLevel } from '../../../data/curriculum';
 import { CurriculumLevel } from '../../../types/curriculum';
+import { LevelId } from '../../../types/level';
 import { TopicCard } from '../../../components/curriculum/TopicCard';
 import { PrimaryButton } from '../../../components/ui/PrimaryButton';
+import { IllustratedHeader } from '../../../components/illustrations/IllustratedHeader';
 import { ProgressState } from '../../../features/progress/types';
 import { DEFAULT_PROGRESS, getProgress } from '../../../features/progress/progressStorage';
-import { getLevelTopicProgress, getTopicAccuracy } from '../../../features/progress/progressUtils';
+import { getLevelTopicProgress } from '../../../features/progress/progressUtils';
 
 export default function LevelTopicsScreen() {
   const { level: levelParam } = useLocalSearchParams<{ level: string }>();
@@ -80,10 +82,16 @@ export default function LevelTopicsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.contentContainer}>
+          {/* Illustrated Header */}
+          <IllustratedHeader
+            levelId={levelId as LevelId}
+            title={displayTitle}
+            subtitle={levelConfig.subtitle}
+          />
+
           <View style={styles.header}>
-            <Text style={styles.brandTitle}>Tutr Kidz</Text>
-            <Text style={styles.screenHeading}>{displayTitle}</Text>
-            <Text style={styles.subtitle}>Choose a topic to begin</Text>
+            <Text style={styles.sectionHeading}>Choose a topic to explore</Text>
+            <Text style={styles.subtitle}>Pick what interests you most</Text>
           </View>
 
           <View style={styles.topicList}>
@@ -143,7 +151,7 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: spacing.xxl,
+    marginBottom: spacing.lg,
   },
   brandTitle: {
     fontSize: 22,
@@ -153,17 +161,25 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   screenHeading: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '800',
     color: colors.text,
     letterSpacing: -0.5,
     marginBottom: spacing.xs,
     textAlign: 'center',
   },
+  sectionHeading: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: colors.text,
+    letterSpacing: -0.3,
+    textAlign: 'center',
+  },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: colors.textSecondary,
     textAlign: 'center',
+    marginTop: 2,
   },
   topicList: {
     width: '100%',

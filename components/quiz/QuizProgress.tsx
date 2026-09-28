@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, spacing } from '../../constants/colors';
+import { colors, layout, spacing } from '../../constants/colors';
 
 interface QuizProgressProps {
   current: number;
@@ -17,9 +17,12 @@ export const QuizProgress: React.FC<QuizProgressProps> = ({ current, total }) =>
       accessibilityRole="text"
       accessibilityLabel={`Question ${current} of ${total}`}
     >
-      <Text style={styles.text}>
-        {current} / {total}
-      </Text>
+      <View style={styles.pillContainer}>
+        <Text style={styles.pillIcon}>✨</Text>
+        <Text style={styles.text}>
+          Question {current} of {total}
+        </Text>
+      </View>
       <View style={styles.track}>
         <View style={[styles.indicator, { width: `${percentage}%` }]} />
       </View>
@@ -34,23 +37,37 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     width: '100%',
   },
+  pillContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FAF5FF',
+    borderRadius: layout.borderRadius.round,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: '#E9D5FF',
+    marginBottom: spacing.sm,
+    gap: 6,
+  },
+  pillIcon: {
+    fontSize: 12,
+  },
   text: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    letterSpacing: 0.6,
-    marginBottom: spacing.xs,
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#7C3AED',
+    letterSpacing: 0.2,
   },
   track: {
-    width: 64,
-    height: 2.5,
+    width: 80,
+    height: 4,
     borderRadius: 2,
-    backgroundColor: colors.borderLight,
+    backgroundColor: '#E9D5FF',
     overflow: 'hidden',
   },
   indicator: {
     height: '100%',
-    backgroundColor: colors.accent,
+    backgroundColor: '#7C3AED',
     borderRadius: 2,
   },
 });

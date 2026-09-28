@@ -28,6 +28,7 @@ import { PracticeInsightCard } from '../../components/insights/PracticeInsightCa
 import { StrongProgress } from '../../components/insights/StrongProgress';
 import { RecentActivity } from '../../components/insights/RecentActivity';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
+import { MascotCharacter } from '../../components/illustrations/MascotCharacter';
 import { TopicInsight } from '../../features/insights/insightTypes';
 import { useParentAccess } from '../../features/settings/useParentAccess';
 import { ParentLockChallengeModal } from '../../components/settings/ParentLockChallengeModal';
@@ -442,6 +443,7 @@ export default function ParentDashboardScreen() {
             /* Graceful Empty State */
             <View style={styles.emptyContainer}>
               <View style={styles.emptyCard}>
+                <View style={{ marginBottom: spacing.md }}><MascotCharacter pose="peaceful" size="medium" /></View>
                 <Text style={styles.emptyTitle}>
                   {childName ? `Welcome, ${childName}!` : 'Welcome to Tutr Kidz'}
                 </Text>

@@ -24,6 +24,7 @@ import {
   shouldShowLevel,
 } from '../features/profile/profileUtils';
 import { DailyPracticeCard } from '../components/dailyLearning/DailyPracticeCard';
+import { IllustratedHero } from '../components/illustrations/IllustratedHero';
 import { TodayProgress } from '../components/dailyLearning/TodayProgress';
 import { fetchLearningRecommendation } from '../features/learning/recommendationUtils';
 import { DailyLearningRecommendation } from '../features/dailyLearning/dailyLearningTypes';
@@ -116,6 +117,7 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.contentContainer}>
+          <IllustratedHero greeting={hasProfile ? `Hello, ${childName}! 👋` : "Welcome to Tutr Kidz! 🌟"} subtitle={hasProfile ? "Ready to explore today?" : "Choose something to explore"} tagline="Small Questions. Big Learning." />
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.brandTitle}>Tutr Kidz</Text>

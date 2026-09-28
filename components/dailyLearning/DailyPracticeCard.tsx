@@ -25,20 +25,26 @@ export const DailyPracticeCard: React.FC<DailyPracticeCardProps> = ({
 
   return (
     <View style={[styles.card, style]} accessible={true}>
-      <Text style={styles.eyebrow}>Today's learning</Text>
+      <View style={styles.topRow}>
+        <View style={styles.badgeContainer}>
+          <Text style={styles.badgeIcon}>✨</Text>
+          <Text style={styles.eyebrow}>Today's learning</Text>
+        </View>
+      </View>
+
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.description}>{description}</Text>
 
       <TouchableOpacity
         style={styles.actionButton}
         onPress={onPress}
-        activeOpacity={0.7}
+        activeOpacity={0.85}
         accessible={true}
         accessibilityRole="button"
         accessibilityLabel={`${actionLabel} today's learning: ${title}`}
         accessibilityHint="Navigates to topic choices"
       >
-        <Text style={styles.actionButtonText}>{actionLabel}</Text>
+        <Text style={styles.actionButtonText}>{actionLabel} →</Text>
       </TouchableOpacity>
     </View>
   );
@@ -46,43 +52,65 @@ export const DailyPracticeCard: React.FC<DailyPracticeCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.card,
-    borderRadius: layout.borderRadius.lg,
+    backgroundColor: '#FEFCE8',
+    borderRadius: layout.borderRadius.xl,
     borderWidth: 1.5,
-    borderColor: '#E8E5DF',
+    borderColor: '#FEF08A',
     padding: spacing.xl,
     marginVertical: spacing.md,
-    boxShadow: "0 2px 6px rgba(0, 0, 0, 0.03)",
-    elevation: 1,
+    boxShadow: '0 4px 12px rgba(217, 119, 6, 0.06)',
+    elevation: 2,
+  },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.xs,
+  },
+  badgeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: layout.borderRadius.round,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderWidth: 1,
+    borderColor: '#FDE047',
+    gap: 4,
+  },
+  badgeIcon: {
+    fontSize: 12,
   },
   eyebrow: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
-    color: colors.accent,
+    color: '#B45309',
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: spacing.xs,
+    letterSpacing: 0.6,
   },
   title: {
     fontSize: 22,
     fontWeight: '800',
-    color: colors.text,
+    color: '#78350F',
     letterSpacing: -0.4,
     marginBottom: spacing.xs,
+    marginTop: 2,
   },
   description: {
     fontSize: 15,
-    color: colors.textSecondary,
+    color: '#92400E',
     lineHeight: 22,
     marginBottom: spacing.lg,
   },
   actionButton: {
     minHeight: 56,
-    backgroundColor: colors.accent,
+    backgroundColor: '#D97706',
     borderRadius: layout.borderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.xl,
+    boxShadow: '0 3px 8px rgba(217, 119, 6, 0.2)',
+    elevation: 2,
   },
   actionButtonText: {
     color: colors.white,

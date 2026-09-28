@@ -9,6 +9,8 @@ import {
 } from 'react-native';
 import { colors, layout, spacing } from '../../constants/colors';
 import { LevelConfig } from '../../types/level';
+import { LevelBadge } from '../illustrations/LevelBadges';
+import { LEVEL_THEMES } from '../../constants/theme';
 
 interface LevelCardProps {
   level: LevelConfig;
@@ -21,6 +23,8 @@ export const LevelCard: React.FC<LevelCardProps> = ({
   onPress,
   style,
 }) => {
+  const theme = LEVEL_THEMES[level.id] || LEVEL_THEMES.toddler;
+
   return (
     <Pressable
       onPress={onPress}
@@ -30,16 +34,27 @@ export const LevelCard: React.FC<LevelCardProps> = ({
       accessibilityHint={`Opens activities for ${level.title}`}
       style={({ pressed }) => [
         styles.card,
+        { borderColor: pressed ? theme.accentColor : theme.borderColor },
         pressed && styles.cardPressed,
         style,
       ]}
     >
+      <View style={styles.badgeWrapper}>
+        <LevelBadge levelId={level.id} size="normal" />
+      </View>
+
       <View style={styles.content}>
-        <Text style={styles.title}>{level.title}</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>{level.title}</Text>
+          <View style={[styles.pill, { backgroundColor: theme.bgLight }]}>
+            <Text style={[styles.pillText, { color: theme.textColor }]}>Explore</Text>
+          </View>
+        </View>
         <Text style={styles.subtitle}>{level.subtitle}</Text>
       </View>
-      <View style={styles.chevronContainer}>
-        <Text style={styles.chevron}>›</Text>
+
+      <View style={[styles.chevronContainer, { backgroundColor: theme.bgLight }]}>
+        <Text style={[styles.chevron, { color: theme.accentColor }]}>›</Text>
       </View>
     </Pressable>
   );
@@ -48,39 +63,59 @@ export const LevelCard: React.FC<LevelCardProps> = ({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.card,
-    borderRadius: layout.borderRadius.lg,
-    borderWidth: 1,
+    borderRadius: layout.borderRadius.xl,
+    borderWidth: 1.5,
     borderColor: colors.border,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.xl,
-    marginVertical: 6,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    marginVertical: 5,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     minHeight: 76,
-    boxShadow: "0 2px 6px rgba(0, 0, 0, 0.03)",
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.03)',
     elevation: 1,
   },
   cardPressed: {
     backgroundColor: colors.cardPressed,
-    opacity: 0.94,
+    transform: [{ scale: 0.99 }],
+    opacity: 0.95,
+  },
+  badgeWrapper: {
+    marginRight: spacing.md,
   },
   content: {
     flex: 1,
-    paddingRight: spacing.md,
+    paddingRight: spacing.sm,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: 2,
   },
   title: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 19,
+    fontWeight: '800',
     color: colors.text,
     letterSpacing: -0.3,
-    marginBottom: 4,
+  },
+  pill: {
+    paddingHorizontal: 7,
+    paddingVertical: 1,
+    borderRadius: layout.borderRadius.round,
+  },
+  pillText: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '400',
     color: colors.textSecondary,
-    lineHeight: 20,
+    lineHeight: 18,
   },
   chevronContainer: {
     width: 32,
@@ -89,12 +124,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     alignItems: 'center',
     justifyContent: 'center',
+    marginLeft: spacing.xs,
   },
   chevron: {
     fontSize: 20,
-    fontWeight: '600',
-    color: colors.textMuted,
+    fontWeight: '700',
     marginTop: -2,
-    marginLeft: 2,
+    marginLeft: 1,
   },
 });

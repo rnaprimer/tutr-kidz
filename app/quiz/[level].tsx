@@ -16,6 +16,7 @@ import { QuizProgress } from '../../components/quiz/QuizProgress';
 import { QuizOption } from '../../components/quiz/QuizOption';
 import { QuizFeedback } from '../../components/quiz/QuizFeedback';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
+import { IllustratedEmptyState } from '../../components/illustrations/IllustratedEmptyState';
 import { OptionVisualState, ToddlerActivityId } from '../../types/quiz';
 import { selectAdaptiveQuestions, getRecentQuestionIds, recordQuestionExposure } from '../../features/learning/questionSelector';
 import { getActiveChildId } from '../../features/family/activeChild';
@@ -132,14 +133,11 @@ export default function QuizScreen() {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.fallbackContainer}>
-          <Text style={styles.fallbackTitle}>No activities available</Text>
-          <Text style={styles.fallbackDesc}>
-            We couldn't find questions for this level yet.
-          </Text>
-          <PrimaryButton
-            label="Return Home"
-            onPress={() => router.replace('/')}
-            style={styles.fallbackButton}
+          <IllustratedEmptyState
+            title="No activities available"
+            description="We couldn't find questions for this level yet."
+            actionLabel="Return Home"
+            onAction={() => router.replace('/')}
           />
         </View>
       </SafeAreaView>
@@ -161,7 +159,7 @@ export default function QuizScreen() {
           <QuizProgress current={currentIndex + 1} total={totalQuestions} />
 
           {/* Question Area */}
-          <View style={styles.questionArea}>
+          <View style={[styles.questionArea, styles.questionCard]}>
             <Text style={styles.questionText}>{currentQuestion.question}</Text>
             {currentQuestion.visual ? (
               <View style={styles.questionVisualContainer}>
@@ -251,6 +249,19 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xl,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  questionCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: layout.borderRadius.xl,
+    borderWidth: 1.5,
+    borderColor: '#EFEFEA',
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.xl,
+    marginVertical: spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: '0 2px 10px rgba(0, 0, 0, 0.03)',
+    elevation: 1,
   },
   questionText: {
     fontSize: 28,
