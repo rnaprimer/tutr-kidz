@@ -1,3 +1,4 @@
+import { useDocumentTitle } from "../../../lib/utils/useDocumentTitle";
 import React, { useState, useEffect } from 'react';
 import { trackEvent } from '../../../lib/analytics';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
@@ -17,6 +18,7 @@ export default function LevelTopicsScreen() {
   const { level: levelParam } = useLocalSearchParams<{ level: string }>();
   const levelId = (typeof levelParam === 'string' ? levelParam : '') as CurriculumLevel;
   const levelConfig = getLevelById(levelId);
+  useDocumentTitle(levelConfig ? `Tutr Kidz — ${levelConfig.title} Topics` : "Tutr Kidz — Topics");
   const topics = getTopicsForLevel(levelId);
 
   const [progress, setProgress] = useState<ProgressState>(DEFAULT_PROGRESS);

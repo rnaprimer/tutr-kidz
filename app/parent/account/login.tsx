@@ -1,3 +1,4 @@
+import { useDocumentTitle } from "../../../lib/utils/useDocumentTitle";
 import React, { useState } from 'react';
 import {
   View,
@@ -19,6 +20,7 @@ import { useParentAccess } from '../../../features/settings/useParentAccess';
 import { useAuth } from '../../../features/auth/useAuth';
 
 export default function LoginScreen() {
+  useDocumentTitle("Tutr Kidz — Parent Sign In");
   const { isLocked, checking, handleUnlockSuccess, handleUnlockCancel } = useParentAccess();
   const { signIn, isLoading } = useAuth();
 

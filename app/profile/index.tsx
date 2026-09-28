@@ -1,3 +1,4 @@
+import { useDocumentTitle } from "../../lib/utils/useDocumentTitle";
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -25,6 +26,7 @@ import { getSettings } from '../../features/settings/settingsStorage';
 
 export default function ProfileScreen() {
   const { childId } = useLocalSearchParams<{ childId?: string }>();
+  useDocumentTitle(childId ? "Tutr Kidz — Edit Learner" : "Tutr Kidz — Create Learner");
   const [existingRecord, setExistingRecord] = useState<ChildRecord | null>(null);
   const [name, setName] = useState('');
   const [selectedLevel, setSelectedLevel] = useState<CurriculumLevel>('class-1');

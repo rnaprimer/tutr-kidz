@@ -1,3 +1,4 @@
+import { useDocumentTitle } from "../../lib/utils/useDocumentTitle";
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,6 +19,7 @@ import { RecentActivity } from '../../components/progress/RecentActivity';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
 
 export default function ProgressScreen() {
+  useDocumentTitle("Tutr Kidz — Progress");
   const [progress, setProgress] = useState<ProgressState>(DEFAULT_PROGRESS);
   const [isLoading, setIsLoading] = useState(true);
 

@@ -1,3 +1,4 @@
+import { useDocumentTitle } from "../../../lib/utils/useDocumentTitle";
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,6 +16,7 @@ import { PrimaryButton } from '../../../components/ui/PrimaryButton';
 import { getLevelById } from '../../../constants/levels';
 
 export default function FamilySettingsScreen() {
+  useDocumentTitle("Tutr Kidz — Family Settings");
   const { isLocked, checking, handleUnlockSuccess, handleUnlockCancel } = useParentAccess();
   const [familyState, setFamilyState] = useState<FamilyState | null>(null);
   const [settings, setSettings] = useState<ParentSettings | null>(null);

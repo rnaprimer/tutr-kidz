@@ -98,9 +98,11 @@ export default function LevelDetailScreen() {
                     ? `${progressSummary.startedTopics} of ${progressSummary.totalTopics} activities started`
                     : `${progressSummary.startedTopics} of ${progressSummary.totalTopics} topics started`}
                 </Text>
-                <Text style={styles.progressAccuracyText}>
-                  {progressSummary.accuracy}% accuracy
-                </Text>
+                {!isToddler ? (
+                  <Text style={styles.progressAccuracyText}>
+                    {progressSummary.accuracy}% accuracy
+                  </Text>
+                ) : null}
               </View>
             ) : (
               <Text style={styles.progressEmptyText}>No activity yet.</Text>
