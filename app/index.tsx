@@ -25,7 +25,7 @@ import {
 } from '../features/profile/profileUtils';
 import { DailyPracticeCard } from '../components/dailyLearning/DailyPracticeCard';
 import { TodayProgress } from '../components/dailyLearning/TodayProgress';
-import { fetchDailyRecommendation } from '../features/dailyLearning/dailyLearningRepository';
+import { fetchLearningRecommendation } from '../features/learning/recommendationUtils';
 import { DailyLearningRecommendation } from '../features/dailyLearning/dailyLearningTypes';
 
 export default function HomeScreen() {
@@ -56,11 +56,17 @@ export default function HomeScreen() {
           setActiveChildRecord(active);
           const [prog, rec] = await Promise.all([
             getProgress(active.profile.id),
-            fetchDailyRecommendation(active.profile.id),
+            fetchLearningRecommendation(active.profile.id),
           ]);
           if (isMounted) {
             setProgress(prog);
-            setRecommendation(rec);
+            setRecommendation(rec as any);
+            if (rec) {
+              trackEvent("learning_recommendation_shown", {
+                level: rec.level,
+                topic: rec.topicId,
+              });
+            }
           }
         } else {
           setActiveChildRecord(null);
@@ -90,6 +96,7 @@ export default function HomeScreen() {
   };
 
   const accuracy = getOverallAccuracy(progress);
+  const isToddler = activeChildRecord?.profile?.level === 'toddler';
   const childName = getChildDisplayName(activeChildRecord);
   const hasProfile = !!activeChildRecord;
   const todayQuestions = getTodayQuestionsAnswered(progress);
@@ -148,16 +155,22 @@ export default function HomeScreen() {
           {recommendation ? (
             <DailyPracticeCard
               recommendation={recommendation}
-              onPress={() => router.push(recommendation.actionRoute as any)}
+              onPress={() => {
+                trackEvent("learning_recommendation_selected", {
+                  level: recommendation.level,
+                  topic: recommendation.topicId,
+                });
+                router.push(recommendation.actionRoute as any);
+              }}
             />
           ) : null}
 
-          {/* Today's Practice Status */}
-          {recommendation ? (
+          {/* Today's Practice Status (omitted for Toddler to preserve calm qualitative discovery) */}
+          {!isToddler && (recommendation ? (
             <TodayProgress
-              questionsAnsweredToday={recommendation.questionsAnsweredToday}
-              dailyQuestionGoal={recommendation.dailyQuestionGoal}
-              isGoalEnabled={recommendation.isGoalEnabled}
+              questionsAnsweredToday={recommendation.questionsAnsweredToday ?? 0}
+              dailyQuestionGoal={recommendation.dailyQuestionGoal ?? 5}
+              isGoalEnabled={recommendation.isGoalEnabled ?? true}
             />
           ) : hasProfile ? (
             <TodayProgress
@@ -165,7 +178,7 @@ export default function HomeScreen() {
               dailyQuestionGoal={dailyGoal}
               isGoalEnabled={true}
             />
-          ) : null}
+          ) : null)}
 
           {/* Learning Section */}
           <View style={styles.sectionHeader}>

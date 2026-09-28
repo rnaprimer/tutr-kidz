@@ -35,6 +35,16 @@ import {
   TopicInsight,
   MasteryLevel,
 } from '../../../../features/insights/insightTypes';
+import { planStorageAdapter } from '../../../../features/plans/planStorage';
+import {
+  getLearningRecommendation,
+  getTopicsExploringNow,
+  getTopicsToRevisit,
+} from '../../../../features/learning/recommendationUtils';
+import {
+  LearningRecommendation,
+  TopicFamiliaritySummary,
+} from '../../../../features/learning/recommendationTypes';
 
 export default function ChildLearningInsightsScreen() {
   useDocumentTitle("Tutr Kidz — Learning Insights");
@@ -48,6 +58,9 @@ export default function ChildLearningInsightsScreen() {
   const [continuity, setContinuity] = useState<LearningContinuity | null>(null);
   const [topicHistory, setTopicHistory] = useState<TopicHistoryItem[]>([]);
   const [chronoHistory, setChronoHistory] = useState<ChronologicalHistory | null>(null);
+  const [recommendation, setRecommendation] = useState<LearningRecommendation | null>(null);
+  const [exploringNow, setExploringNow] = useState<TopicFamiliaritySummary[]>([]);
+  const [revisitSummaries, setRevisitSummaries] = useState<TopicFamiliaritySummary[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
@@ -57,19 +70,31 @@ export default function ChildLearningInsightsScreen() {
       const current = familyState.children[childId];
       if (current) {
         setChildRecord(current);
-        const [sum, topics, cont, hist, prog] = await Promise.all([
+        const [sum, topics, cont, hist, prog, plan] = await Promise.all([
           fetchChildLearningSummary(childId),
           fetchChildTopicInsights(childId),
           fetchChildLearningContinuity(childId),
           fetchChildTopicHistory(childId, current.profile.level),
           getProgress(childId),
+          planStorageAdapter.getPlan(childId),
         ]);
         const chrono = getChronologicalLearningHistory(prog, current.profile.level);
+        const rec = getLearningRecommendation({
+          childRecord: current,
+          progress: prog,
+          plan,
+        });
+        const nowExploring = getTopicsExploringNow(current.profile.level, prog);
+        const toRevisit = getTopicsToRevisit(current.profile.level, prog);
+
         setSummary(sum);
         setTopicInsights(topics);
         setContinuity(cont);
         setTopicHistory(hist);
         setChronoHistory(chrono);
+        setRecommendation(rec);
+        setExploringNow(nowExploring);
+        setRevisitSummaries(toRevisit);
         trackEvent('learning_insights_opened');
         trackEvent('learning_history_opened');
       }
@@ -287,7 +312,40 @@ export default function ChildLearningInsightsScreen() {
             </View>
           ) : null}
 
-          {/* Topics to Revisit (Phase 18) */}
+          {/* Suggested Next (Phase 22) */}
+          {recommendation ? (
+            <View style={styles.section} accessible={true} accessibilityRole="summary" accessibilityLabel="Suggested next exploration">
+              <Text style={styles.sectionHeading}>Suggested Next</Text>
+              <View style={styles.guidanceCard}>
+                <Text style={styles.guidanceEyebrow}>
+                  {recommendation.reason === "revisit" ? "Gentle Revisit" : "Next Step"}
+                </Text>
+                <Text style={styles.guidanceTitle}>{recommendation.title}</Text>
+                <Text style={styles.guidanceMessage}>{recommendation.description}</Text>
+              </View>
+            </View>
+          ) : null}
+
+          {/* Exploring Now (Phase 22) */}
+          {exploringNow.length > 0 ? (
+            <View style={styles.section} accessible={true} accessibilityRole="summary" accessibilityLabel="Topics currently being explored">
+              <Text style={styles.sectionHeading}>Exploring Now</Text>
+              <View style={styles.exploredList}>
+                {exploringNow.map((t) => (
+                  <View key={"exploring-" + t.topicId} style={styles.exploredCard}>
+                    <Text style={styles.exploredTitle}>{t.title}</Text>
+                    <Text style={styles.exploredSummary}>
+                      {isToddler
+                        ? t.title + " has been explored recently."
+                        : t.title + " is currently being explored at " + childName + "'s natural pace."}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          ) : null}
+
+          {/* Topics to Revisit (Phase 18 & 22) */}
           {(() => {
             const revisitTopics = topicHistory.filter(
               (t) => t.recentState === 'revisit-suggested' || (t.attempts >= 1 && t.mastery === 'developing')

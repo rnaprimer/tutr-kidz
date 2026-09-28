@@ -17,6 +17,8 @@ import { QuizOption } from '../../components/quiz/QuizOption';
 import { QuizFeedback } from '../../components/quiz/QuizFeedback';
 import { PrimaryButton } from '../../components/ui/PrimaryButton';
 import { OptionVisualState, ToddlerActivityId } from '../../types/quiz';
+import { selectAdaptiveQuestions, getRecentQuestionIds, recordQuestionExposure } from '../../features/learning/questionSelector';
+import { getActiveChildId } from '../../features/family/activeChild';
 import { CurriculumLevel } from '../../types/curriculum';
 import { QuizVisualRenderer } from '../../components/quiz/QuizVisualRenderer';
 
@@ -41,21 +43,50 @@ export default function QuizScreen() {
   const activityId = typeof activityParam === 'string' ? activityParam : '';
   const topicId = typeof topicParam === 'string' ? topicParam : '';
 
+  const [recentIds, setRecentIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    getActiveChildId().then((cid) => {
+      if (cid && isMounted) {
+        getRecentQuestionIds(cid, topicId || activityId).then((ids) => {
+          if (isMounted) setRecentIds(ids);
+        });
+      }
+    }).catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, [topicId, activityId]);
+
   const questions = React.useMemo(() => {
     if (levelId === 'toddler') {
       const actId = (activityId || 'colours') as ToddlerActivityId;
-      return getQuestionsForActivity(actId);
+      const raw = getQuestionsForActivity(actId);
+      return selectAdaptiveQuestions(raw, {
+        count: 5,
+        recentQuestionIds: recentIds,
+        level: 'toddler',
+        topicId: actId,
+      });
     }
 
     const curLevel = levelId as CurriculumLevel;
     if (topicId) {
       const topicQuestions = getQuestionsForTopic(curLevel, topicId);
-      return getRandomQuiz(topicQuestions);
+      return selectAdaptiveQuestions(topicQuestions, {
+        recentQuestionIds: recentIds,
+        level: curLevel,
+        topicId,
+      });
     }
 
     const levelQuestions = getQuestionsForLevel(curLevel);
-    return getRandomQuiz(levelQuestions);
-  }, [levelId, activityId, topicId]);
+    return selectAdaptiveQuestions(levelQuestions, {
+      recentQuestionIds: recentIds,
+      level: curLevel,
+    });
+  }, [levelId, activityId, topicId, recentIds]);
 
   const {
     currentIndex,
@@ -77,6 +108,12 @@ export default function QuizScreen() {
     const isFinished = nextQuestion();
     if (isFinished) {
       setIsTransitioning(true);
+      getActiveChildId().then((cid) => {
+        if (cid) {
+          const askedIds = questions.map((q) => q.id);
+          recordQuestionExposure(cid, askedIds, topicId || activityId);
+        }
+      }).catch(() => {});
       router.replace({
         pathname: '/quiz/result',
         params: {

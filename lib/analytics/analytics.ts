@@ -28,7 +28,11 @@ export type AnalyticsEventType =
   | 'first_learning_session_started'
   | 'feedback_submitted'
   | 'feedback_sync_completed'
-  | 'production_error';
+  | 'production_error'
+  | 'learning_recommendation_shown'
+  | 'learning_recommendation_selected'
+  | 'topic_revisit_selected'
+  | 'recommended_topic_explored';
 
 export interface AnalyticsEvent {
   event: AnalyticsEventType;

@@ -33,8 +33,8 @@ import { useParentAccess } from '../../features/settings/useParentAccess';
 import { ParentLockChallengeModal } from '../../components/settings/ParentLockChallengeModal';
 import { isParentUnlocked, lockParent } from '../../features/settings/parentSession';
 import { isParentLockEnabled } from '../../features/settings/parentLock';
-import { fetchDailyRecommendation } from '../../features/dailyLearning/dailyLearningRepository';
-import { DailyLearningRecommendation } from '../../features/dailyLearning/dailyLearningTypes';
+import { fetchLearningRecommendation } from '../../features/learning/recommendationUtils';
+import { LearningRecommendation } from '../../features/learning/recommendationTypes';
 import {
   getLearningPlan,
   updateLearningIntention,
@@ -58,7 +58,7 @@ export default function ParentDashboardScreen() {
   const [hasMultipleChildren, setHasMultipleChildren] = useState<boolean>(false);
   const [todayQuestions, setTodayQuestions] = useState<number>(0);
   const [lockEnabled, setLockEnabled] = useState<boolean>(false);
-  const [dailyFocus, setDailyFocus] = useState<DailyLearningRecommendation | null>(null);
+  const [dailyFocus, setDailyFocus] = useState<LearningRecommendation | null>(null);
   const [learningPlan, setLearningPlan] = useState<LearningPlan | null>(null);
   const [intentionModalVisible, setIntentionModalVisible] = useState<boolean>(false);
 
@@ -81,7 +81,7 @@ export default function ParentDashboardScreen() {
           fetchParentDashboardData(activeId),
           getProgress(activeId),
           isParentLockEnabled(),
-          fetchDailyRecommendation(activeId),
+          fetchLearningRecommendation(activeId),
           activeId ? getLearningPlan(activeId) : Promise.resolve(null),
         ]);
 
@@ -341,7 +341,7 @@ export default function ParentDashboardScreen() {
               {/* 3. CONTINUE EXPLORING (Daily Focus / Next Natural Topic) */}
               {dailyFocus ? (
                 <View style={styles.focusCard} accessible={true} accessibilityRole="summary" accessibilityLabel="Continue exploring recommendation">
-                  <Text style={styles.focusEyebrow}>Continue Exploring</Text>
+                  <Text style={styles.focusEyebrow}>Suggested Next</Text>
                   <Text style={styles.focusTitle}>{dailyFocus.title}</Text>
                   <Text style={styles.focusDescription}>{dailyFocus.description}</Text>
                 </View>
