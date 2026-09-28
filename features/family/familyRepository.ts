@@ -325,8 +325,9 @@ export async function removeChild(id: ChildId): Promise<void> {
   const current = await getFamilyState();
   delete current.children[id];
 
-  // Clean local progress cache
+  // Clean local progress and plan cache
   await progressStorageAdapter.removeItem(`tutr_kidz_progress_${id}`);
+  await familyStorageAdapter.removeItem(`tutr_kidz_plan_${id}`);
 
   if (current.activeChildId === id) {
     const remainingIds = Object.keys(current.children);
@@ -377,6 +378,7 @@ export async function resetFamily(): Promise<void> {
   const current = await getFamilyState();
   for (const childId of Object.keys(current.children)) {
     await progressStorageAdapter.removeItem(`tutr_kidz_progress_${childId}`);
+    await familyStorageAdapter.removeItem(`tutr_kidz_plan_${childId}`);
   }
   await progressStorageAdapter.removeItem('tutr_kidz_progress');
 

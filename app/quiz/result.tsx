@@ -145,40 +145,48 @@ export default function QuizResultScreen() {
 
           <View style={styles.card}>
             <Text style={styles.heading}>
-              {isToddler ? 'Great work! 🎉' : 'Great job!'}
+              {isToddler ? "Nice exploring! 🌟" : "Great job!"}
             </Text>
 
-            <View style={styles.scoreContainer}>
-              <Text style={styles.scoreText}>
-                {score} / {total}
-              </Text>
-              {previousBest ? (
-                <Text style={styles.bestScoreText}>
-                  Best for this topic: {previousBest.score} / {previousBest.total}
+            {isToddler ? (
+              <View style={styles.toddlerExplorationContainer}>
+                <Text style={styles.toddlerExplorationText}>
+                  You discovered something new.
                 </Text>
-              ) : null}
-            </View>
+              </View>
+            ) : (
+              <View style={styles.scoreContainer}>
+                <Text style={styles.scoreText}>
+                  {score} / {total}
+                </Text>
+                {previousBest ? (
+                  <Text style={styles.bestScoreText}>
+                    Best for this topic: {previousBest.score} / {previousBest.total}
+                  </Text>
+                ) : null}
+              </View>
+            )}
 
             <Text style={styles.summaryText}>
               {isToddler
-                ? `You got ${score} right. You're learning!`
-                : `You got ${score} question${score === 1 ? '' : 's'} correct.`}
+                ? "Ready to explore another one?"
+                : `You got ${score} question${score === 1 ? "" : "s"} correct.`}
             </Text>
 
             <View style={styles.actions}>
               {/* Primary action */}
               <PrimaryButton
-                label="Try Again"
+                label={isToddler ? "Explore Again" : "Try Again"}
                 variant="primary"
                 onPress={handleTryAgain}
                 style={styles.actionButton}
-                accessibilityLabel="Try quiz again"
+                accessibilityLabel={isToddler ? "Explore this activity again" : "Try quiz again"}
                 accessibilityHint="Restarts this activity from the first question"
               />
 
               {/* Secondary action (Choose Another topic/activity) */}
               <PrimaryButton
-                label={isToddler ? 'Choose Another' : 'Choose Another Topic'}
+                label={isToddler ? "Explore Another" : "Choose Another Topic"}
                 variant="secondary"
                 onPress={handleChooseAnother}
                 style={styles.actionButton}
@@ -259,6 +267,23 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
     marginBottom: spacing.xl,
     textAlign: 'center',
+  },
+  toddlerExplorationContainer: {
+    backgroundColor: "#F0FDF4",
+    borderRadius: layout.borderRadius.lg,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.xl,
+    borderWidth: 1.5,
+    borderColor: "#BBF7D0",
+    marginBottom: spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  toddlerExplorationText: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#15803D",
+    textAlign: "center",
   },
   scoreContainer: {
     backgroundColor: colors.background,

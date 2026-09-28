@@ -409,6 +409,7 @@ export async function deleteParentAccount(): Promise<{ success: boolean; error?:
   const familyState = await getFamilyState();
   for (const childId of Object.keys(familyState.children)) {
     await progressStorageAdapter.removeItem(`tutr_kidz_progress_${childId}`);
+    await familyStorageAdapter.removeItem(`tutr_kidz_plan_${childId}`);
   }
   await progressStorageAdapter.removeItem('tutr_kidz_progress');
   await familyStorageAdapter.removeItem(FAMILY_STORAGE_KEY);

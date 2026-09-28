@@ -8,6 +8,7 @@
 import { getSupabaseClient } from '../../lib/supabase/client';
 import { getCurrentParentUser } from '../../lib/supabase/auth';
 import { OverallProgress, ProgressRecord, ProgressState, RecordQuizParams } from './types';
+import { sanitizeQuizAttempt } from './progressIntegrity';
 import { getActiveChildId } from '../family/activeChild';
 import {
   progressStorageAdapter,
@@ -127,53 +128,54 @@ export async function recordQuizResult(
   params: RecordQuizParams,
   childId?: string | null
 ): Promise<ProgressState> {
+  const safeParams = sanitizeQuizAttempt(params);
   const resolvedChildId = childId ?? (await getActiveChildId());
   const now = new Date().toISOString();
 
   // 1. Calculate updated local progress state first
   const current = await getProgress(resolvedChildId);
-  const existingTopic = current.topics[params.topic];
+  const existingTopic = current.topics[safeParams.topic];
 
   // Best score logic: compute percentage to handle variable session lengths correctly
-  let bestScore = params.score;
-  let bestTotal = params.total;
+  let bestScore = safeParams.score;
+  let bestTotal = safeParams.total;
 
   if (existingTopic && existingTopic.bestTotal > 0) {
     const prevBestRatio = existingTopic.bestScore / existingTopic.bestTotal;
-    const newRatio = params.score / params.total;
+    const newRatio = safeParams.score / safeParams.total;
 
     if (prevBestRatio > newRatio) {
       bestScore = existingTopic.bestScore;
       bestTotal = existingTopic.bestTotal;
-    } else if (prevBestRatio === newRatio && existingTopic.bestScore >= params.score) {
+    } else if (prevBestRatio === newRatio && existingTopic.bestScore >= safeParams.score) {
       bestScore = existingTopic.bestScore;
       bestTotal = existingTopic.bestTotal;
     }
   }
 
   const updatedTopic: ProgressRecord = {
-    level: params.level,
-    topic: params.topic,
+    level: safeParams.level,
+    topic: safeParams.topic,
     attempts: (existingTopic?.attempts ?? 0) + 1,
-    questionsAnswered: (existingTopic?.questionsAnswered ?? 0) + params.total,
-    correctAnswers: (existingTopic?.correctAnswers ?? 0) + params.score,
-    incorrectAnswers: (existingTopic?.incorrectAnswers ?? 0) + (params.total - params.score),
+    questionsAnswered: (existingTopic?.questionsAnswered ?? 0) + safeParams.total,
+    correctAnswers: (existingTopic?.correctAnswers ?? 0) + safeParams.score,
+    incorrectAnswers: (existingTopic?.incorrectAnswers ?? 0) + (safeParams.total - safeParams.score),
     bestScore,
     bestTotal,
-    lastScore: params.score,
-    lastTotal: params.total,
+    lastScore: safeParams.score,
+    lastTotal: safeParams.total,
     lastPlayedAt: now,
   };
 
   const nextTopics = {
     ...current.topics,
-    [params.topic]: updatedTopic,
+    [safeParams.topic]: updatedTopic,
   };
 
   const nextOverall: OverallProgress = {
-    totalQuestionsAnswered: current.overall.totalQuestionsAnswered + params.total,
-    totalCorrectAnswers: current.overall.totalCorrectAnswers + params.score,
-    totalIncorrectAnswers: current.overall.totalIncorrectAnswers + (params.total - params.score),
+    totalQuestionsAnswered: current.overall.totalQuestionsAnswered + safeParams.total,
+    totalCorrectAnswers: current.overall.totalCorrectAnswers + safeParams.score,
+    totalIncorrectAnswers: current.overall.totalIncorrectAnswers + (safeParams.total - safeParams.score),
     quizzesCompleted: current.overall.quizzesCompleted + 1,
     lastPlayedAt: now,
   };
@@ -195,10 +197,10 @@ export async function recordQuizResult(
       // 3.1 Insert immutable quiz attempt
       await client.from('quiz_attempts').insert({
         child_id: resolvedChildId,
-        level: params.level,
-        topic: params.topic,
-        score: params.score,
-        total: params.total,
+        level: safeParams.level,
+        topic: safeParams.topic,
+        score: safeParams.score,
+        total: safeParams.total,
         completed_at: now,
       });
 
@@ -206,8 +208,8 @@ export async function recordQuizResult(
       await client.from('topic_progress').upsert(
         {
           child_id: resolvedChildId,
-          level: params.level,
-          topic: params.topic,
+          level: safeParams.level,
+          topic: safeParams.topic,
           attempts: updatedTopic.attempts,
           questions_answered: updatedTopic.questionsAnswered,
           correct_answers: updatedTopic.correctAnswers,

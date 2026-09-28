@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -6,8 +6,9 @@ import {
   TouchableOpacity,
   Alert,
   Platform,
-} from 'react-native';
-import { colors, layout, spacing } from '../../constants/colors';
+  ActivityIndicator,
+} from "react-native";
+import { colors, layout, spacing } from "../../constants/colors";
 
 interface DestructiveActionProps {
   title: string;
@@ -26,30 +27,46 @@ export function DestructiveAction({
   buttonLabel,
   confirmTitle,
   confirmMessage,
-  confirmButtonLabel = 'Confirm',
+  confirmButtonLabel = "Confirm",
   onPress,
   requireConfirmation = true,
 }: DestructiveActionProps) {
+  const [isPending, setIsPending] = useState(false);
+
+  const executeAction = async () => {
+    if (isPending) return;
+    try {
+      setIsPending(true);
+      await onPress();
+    } catch {
+      // Safe fail
+    } finally {
+      setIsPending(false);
+    }
+  };
+
   const handleTrigger = () => {
+    if (isPending) return;
+
     if (!requireConfirmation) {
-      onPress();
+      executeAction();
       return;
     }
 
-    if (Platform.OS === 'web') {
-      if (typeof window !== 'undefined') {
-        const fullMessage = `${confirmTitle}\n\n${confirmMessage}`;
+    if (Platform.OS === "web") {
+      if (typeof window !== "undefined") {
+        const fullMessage = confirmTitle + "\n\n" + confirmMessage;
         if (window.confirm(fullMessage)) {
-          onPress();
+          executeAction();
         }
       }
     } else {
       Alert.alert(confirmTitle, confirmMessage, [
-        { text: 'Cancel', style: 'cancel' },
+        { text: "Cancel", style: "cancel" },
         {
           text: confirmButtonLabel,
-          style: 'destructive',
-          onPress,
+          style: "destructive",
+          onPress: executeAction,
         },
       ]);
     }
@@ -60,15 +77,21 @@ export function DestructiveAction({
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.description}>{description}</Text>
       <TouchableOpacity
-        style={styles.button}
+        style={[styles.button, isPending && styles.buttonDisabled]}
         onPress={handleTrigger}
+        disabled={isPending}
         activeOpacity={0.7}
         accessible={true}
         accessibilityRole="button"
         accessibilityLabel={buttonLabel}
-        accessibilityHint={`Triggers ${title}`}
+        accessibilityHint={"Triggers " + title}
+        accessibilityState={{ disabled: isPending }}
       >
-        <Text style={styles.buttonText}>{buttonLabel}</Text>
+        {isPending ? (
+          <ActivityIndicator size="small" color="#DC2626" />
+        ) : (
+          <Text style={styles.buttonText}>{buttonLabel}</Text>
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -79,13 +102,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: layout.borderRadius.md,
     borderWidth: 1,
-    borderColor: '#FEE2E2',
+    borderColor: "#FEE2E2",
     padding: spacing.lg,
     marginBottom: spacing.md,
   },
   title: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
     color: colors.text,
     letterSpacing: -0.2,
   },
@@ -98,18 +121,21 @@ const styles = StyleSheet.create({
   },
   button: {
     minHeight: 56,
-    backgroundColor: '#FEF2F2',
+    backgroundColor: "#FEF2F2",
     borderWidth: 1.5,
-    borderColor: '#FCA5A5',
+    borderColor: "#FCA5A5",
     borderRadius: layout.borderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: spacing.lg,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
   buttonText: {
     fontSize: 15,
-    fontWeight: '600',
-    color: '#DC2626',
+    fontWeight: "600",
+    color: "#DC2626",
     letterSpacing: -0.2,
   },
 });
