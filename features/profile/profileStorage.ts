@@ -1,5 +1,6 @@
 import { ChildProfile, LearningPreferences, ProfileState } from './profileTypes';
 import { CurriculumLevel } from '../../types/curriculum';
+import { platformStorage } from '../../lib/storage/platformStorage';
 
 export const STORAGE_KEY = 'tutr_kidz_profile';
 
@@ -11,46 +12,7 @@ export const DEFAULT_PROFILE_STATE: ProfileState = {
   },
 };
 
-// In-memory fallback if persistent storage is unavailable
-let profileMemoryStorage: Record<string, string> = {};
-
-/**
- * Low-level storage adapter safely supporting localStorage and in-memory fallback.
- */
-const storageAdapter = {
-  getItem: async (key: string): Promise<string | null> => {
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        return window.localStorage.getItem(key);
-      }
-    } catch {
-      // Fallback below
-    }
-    return profileMemoryStorage[key] ?? null;
-  },
-  setItem: async (key: string, value: string): Promise<void> => {
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        window.localStorage.setItem(key, value);
-        return;
-      }
-    } catch {
-      // Fallback below
-    }
-    profileMemoryStorage[key] = value;
-  },
-  removeItem: async (key: string): Promise<void> => {
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        window.localStorage.removeItem(key);
-        return;
-      }
-    } catch {
-      // Fallback below
-    }
-    delete profileMemoryStorage[key];
-  },
-};
+const storageAdapter = platformStorage;
 
 const VALID_GOALS: Array<LearningPreferences['dailyQuestionGoal']> = [5, 10, 15, 20];
 const VALID_LEVELS: CurriculumLevel[] = ['toddler', 'class-1', 'class-2', 'class-3', 'class-4'];
@@ -165,7 +127,6 @@ export async function updateLearningPreferences(
  */
 export async function resetProfile(): Promise<void> {
   try {
-    profileMemoryStorage = {};
     await storageAdapter.removeItem(STORAGE_KEY);
   } catch {
     // Fail gracefully

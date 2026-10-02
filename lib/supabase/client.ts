@@ -1,12 +1,15 @@
 /**
- * Tutr Kidz - Supabase Client (Phase 13)
+ * Tutr Kidz - Supabase Client (Phase 13, Phase 26A Native Update)
  *
  * Configures the official Supabase client using environment variables.
+ * Uses platform-aware storage (AsyncStorage on native, localStorage on web)
+ * for persistent session state across restarts.
  * Safe fallback ensures the application runs seamlessly in offline/local-only mode
  * if credentials are missing or unconfigured.
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { platformStorage } from '../storage/platformStorage';
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -44,9 +47,10 @@ export function getSupabaseClient(): SupabaseClient<any, 'public', any> | null {
     try {
       clientInstance = createClient(supabaseUrl, supabaseAnonKey, {
         auth: {
+          storage: platformStorage,
           persistSession: true,
           autoRefreshToken: true,
-          detectSessionInUrl: false,
+          detectSessionInUrl: typeof window !== 'undefined' && typeof window.location !== 'undefined',
         },
       });
     } catch {

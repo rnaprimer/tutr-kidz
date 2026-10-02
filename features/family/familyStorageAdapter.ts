@@ -1,10 +1,12 @@
 /**
- * Tutr Kidz - Family Storage Adapter (Phase 13)
+ * Tutr Kidz - Family Storage Adapter (Phase 13, Phase 26A Native Update)
  *
  * Low-level storage adapter and defaults for family profiles.
+ * Supports web localStorage and native AsyncStorage with in-memory fallback.
  */
 
 import { ChildId, FamilyState, LearningPreferences } from './familyTypes';
+import { platformStorage } from '../../lib/storage/platformStorage';
 
 export const FAMILY_STORAGE_KEY = 'tutr_kidz_family';
 
@@ -18,40 +20,15 @@ export const DEFAULT_FAMILY_STATE: FamilyState = {
   activeChildId: null,
 };
 
-let familyMemoryStorage: Record<string, string> = {};
-
 export const familyStorageAdapter = {
   getItem: async (key: string): Promise<string | null> => {
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        return window.localStorage.getItem(key);
-      }
-    } catch {
-      // Fallback
-    }
-    return familyMemoryStorage[key] ?? null;
+    return platformStorage.getItem(key);
   },
   setItem: async (key: string, value: string): Promise<void> => {
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        window.localStorage.setItem(key, value);
-        return;
-      }
-    } catch {
-      // Fallback
-    }
-    familyMemoryStorage[key] = value;
+    return platformStorage.setItem(key, value);
   },
   removeItem: async (key: string): Promise<void> => {
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        window.localStorage.removeItem(key);
-        return;
-      }
-    } catch {
-      // Fallback
-    }
-    delete familyMemoryStorage[key];
+    return platformStorage.removeItem(key);
   },
 };
 

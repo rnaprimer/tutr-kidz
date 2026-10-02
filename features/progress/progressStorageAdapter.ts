@@ -1,10 +1,12 @@
 /**
- * Tutr Kidz - Progress Storage Adapter (Phase 13)
+ * Tutr Kidz - Progress Storage Adapter (Phase 13, Phase 26A Native Update)
  *
  * Low-level storage adapter and defaults for learning progress.
+ * Supports web localStorage and native AsyncStorage with memoryStorage fallback.
  */
 
 import { ProgressState } from './types';
+import { platformStorage, memoryStorage } from '../../lib/storage/platformStorage';
 
 export const DEFAULT_STORAGE_KEY = 'tutr_kidz_progress';
 
@@ -18,39 +20,18 @@ export const DEFAULT_PROGRESS: ProgressState = {
   },
 };
 
-let memoryStorage: Record<string, string> = {};
-
+// Persistent storage adapter:
+// - Web: uses window.localStorage
+// - Native: uses @react-native-async-storage/async-storage
+// - Fallback: uses memoryStorage
 export const progressStorageAdapter = {
   getItem: async (key: string): Promise<string | null> => {
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        return window.localStorage.getItem(key);
-      }
-    } catch {
-      // Fallback
-    }
-    return memoryStorage[key] ?? null;
+    return platformStorage.getItem(key);
   },
   setItem: async (key: string, value: string): Promise<void> => {
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        window.localStorage.setItem(key, value);
-        return;
-      }
-    } catch {
-      // Fallback
-    }
-    memoryStorage[key] = value;
+    return platformStorage.setItem(key, value);
   },
   removeItem: async (key: string): Promise<void> => {
-    try {
-      if (typeof window !== 'undefined' && window.localStorage) {
-        window.localStorage.removeItem(key);
-        return;
-      }
-    } catch {
-      // Fallback
-    }
-    delete memoryStorage[key];
+    return platformStorage.removeItem(key);
   },
 };
