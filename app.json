@@ -37,6 +37,13 @@
           "backgroundColor": "#FAFAF7"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "24e0f3e0-ff66-4232-b79f-6711d07596b0"
+      }
+    },
+    "owner": "rnaprimers-team"
   }
 }
